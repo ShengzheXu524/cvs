@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "year": "2024",
+    "exam_type": "英语(一)"
+  },
+  "sections": {
+    "cloze": {
+      "original_text": "There's nothing more welcoming than a door opening for you. [1] the need to be touched to open or close,automatic doors are essential in [2] disabled access to buildings and helping provide general [3] to commercial buildings.",
+      "restored_text": "There's nothing more welcoming than a door opening for you. Without the need to be touched to open or close,automatic doors are essential in improving disabled access to buildings and helping provide general guidance to commercial buildings.",
+      "answers_summary": "1.D 2.C 3.B 4.A 5.B 6.C 7.A 8.D 9.A 10.D"
+    },
+    "reading": {
+      "text_1": {
+        "original_text": "Nearly 2,000 years ago,as the Romans began to pull out of Scotland,they left behind a curious treasure:10 tons of nails,nearly a million of the things.The nail hoard was discovered in 1960 in a four-metre-deep pit covered by two metres of gravel.",
+        "answers_summary": "21.D 22.D 23.A 24.B 25.A"
+      }
+    }
+  },
+  "questions": [
+    {
+      "number": 1,
+      "section_type": "完型填空",
+      "stem": "/",
+      "options": "A. Without, B. Though, C. Despite, D. Besides",
+      "correct_answer": "A. Without",
+      "distractor_options": "B. Though, C. Despite, D. Besides"
+    },
+    {
+      "number": 21,
+      "section_type": "阅读理解",
+      "stem": "The Romans buried the nails probably for the sake of",
+      "options": "[A]saving them for future use. [B]keeping them from rusting. [C]letting them grow in value. [D]hiding them from the locals.",
+      "correct_answer": "[D]hiding them from the locals",
+      "distractor_options": "[A]saving them for future use. [B]keeping them from rusting. [C]letting them grow in value."
+    }
+  ]
+}

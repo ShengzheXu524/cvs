@@ -1,0 +1,43 @@
+# 环境变量文件 - 包含敏感信息
+.env
+
+# Python临时文件
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.so
+
+# 分发和打包
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# 日志文件
+*.log
+
+# 测试结果
+test_results/
+
+# macOS
+.DS_Store
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE文件
+.idea/
+.vscode/
+*.swp
+*.swo 

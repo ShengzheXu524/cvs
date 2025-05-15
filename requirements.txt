@@ -1,0 +1,7 @@
+python-docx==0.8.11
+requests==2.31.0
+pandas==2.0.3
+python-dotenv==1.0.0
+tqdm==4.66.1
+nltk==3.8.1
+anthropic==0.19.1 
