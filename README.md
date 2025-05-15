@@ -4,6 +4,10 @@
 
 这是一个用于处理考研英语真题docx文件的Python工具，能够通过调用Claude 3.7 API提取试题内容并生成标准化CSV文件。
 
+## 项目仓库
+
+GitHub: https://github.com/ShengzheXu524/cvs
+
 ## 功能介绍
 
 本工具可以：
@@ -158,3 +162,8 @@ python src/main.py --input ./examples/ --output ./results/ --batch
 - 修复anthropic库版本兼容问题
 - 优化.cursorrules配置文件
 - 添加README助手指引，便于项目状态追踪 
+
+### v1.3
+- 创建GitHub仓库并推送代码
+- 完善.gitignore文件，确保敏感信息不被提交
+- 更新README文档，添加仓库链接 
