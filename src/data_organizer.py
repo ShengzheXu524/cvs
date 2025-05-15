@@ -122,16 +122,23 @@ class DataOrganizer:
         year = year or metadata.get("year", "")
         exam_type = exam_type or metadata.get("exam_type", "")
         
-        # 整理原文信息
+        # 整理原文信息和答案信息
         section_texts = {}
+        section_answers = {}
+        
+        # 解析各板块的答案汇总，转换为题号->答案的映射
+        answer_mappings = {}
         
         # 完形填空
         if "cloze" in sections:
             section_texts["完形填空"] = {
                 "原文（卷面）": sections["cloze"].get("original_text", ""),
                 "原文（还原后）": sections["cloze"].get("restored_text", ""),
-                "试卷答案": sections["cloze"].get("answers_summary", "")
+                "答案汇总": sections["cloze"].get("answers_summary", "")
             }
+            # 解析完形填空答案
+            answers_summary = sections["cloze"].get("answers_summary", "")
+            answer_mappings.update(self._parse_answers_summary(answers_summary))
         
         # 阅读理解
         if "reading" in sections:
@@ -143,31 +150,44 @@ class DataOrganizer:
                         section_texts["阅读理解"] = {
                             "原文（卷面）": sections["reading"][text_key].get("original_text", ""),
                             "原文（还原后）": sections["reading"][text_key].get("original_text", ""),  # 阅读没有还原版本
-                            "试卷答案": sections["reading"][text_key].get("answers_summary", "")
+                            "答案汇总": sections["reading"][text_key].get("answers_summary", "")
                         }
                         section_texts["阅读理解 Text 1"] = section_texts["阅读理解"]
+                        # 解析阅读理解答案
+                        answers_summary = sections["reading"][text_key].get("answers_summary", "")
+                        answer_mappings.update(self._parse_answers_summary(answers_summary))
                     else:
                         section_texts[section_name] = {
                             "原文（卷面）": sections["reading"][text_key].get("original_text", ""),
                             "原文（还原后）": sections["reading"][text_key].get("original_text", ""),  # 阅读没有还原版本
-                            "试卷答案": sections["reading"][text_key].get("answers_summary", "")
+                            "答案汇总": sections["reading"][text_key].get("answers_summary", "")
                         }
+                        # 解析阅读理解答案
+                        answers_summary = sections["reading"][text_key].get("answers_summary", "")
+                        answer_mappings.update(self._parse_answers_summary(answers_summary))
         
         # 新题型
         if "new_type" in sections:
             section_texts["新题型"] = {
                 "原文（卷面）": sections["new_type"].get("original_text", ""),
                 "原文（还原后）": sections["new_type"].get("restored_text", ""),
-                "试卷答案": sections["new_type"].get("answers_summary", "")
+                "答案汇总": sections["new_type"].get("answers_summary", "")
             }
+            # 解析新题型答案
+            answers_summary = sections["new_type"].get("answers_summary", "")
+            answer_mappings.update(self._parse_answers_summary(answers_summary))
         
         # 翻译
         if "translation" in sections:
             section_texts["翻译"] = {
                 "原文（卷面）": sections["translation"].get("original_text", ""),
                 "原文（还原后）": sections["translation"].get("original_text", ""),  # 翻译没有还原版本
-                "试卷答案": sections["translation"].get("answers_summary", "N/A")
+                "答案汇总": sections["translation"].get("answers_summary", "N/A")
             }
+            # 解析翻译答案(如果有)
+            answers_summary = sections["translation"].get("answers_summary", "")
+            if answers_summary and answers_summary != "N/A":
+                answer_mappings.update(self._parse_answers_summary(answers_summary))
         
         # 写作
         if "writing" in sections:
@@ -175,13 +195,13 @@ class DataOrganizer:
                 section_texts["写作A"] = {
                     "原文（卷面）": sections["writing"]["part_a"].get("original_text", ""),
                     "原文（还原后）": sections["writing"]["part_a"].get("original_text", ""),  # 写作没有还原版本
-                    "试卷答案": sections["writing"]["part_a"].get("answers_summary", "N/A")
+                    "答案汇总": sections["writing"]["part_a"].get("answers_summary", "N/A")
                 }
             if "part_b" in sections["writing"]:
                 section_texts["写作B"] = {
                     "原文（卷面）": sections["writing"]["part_b"].get("original_text", ""),
                     "原文（还原后）": sections["writing"]["part_b"].get("original_text", ""),  # 写作没有还原版本
-                    "试卷答案": sections["writing"]["part_b"].get("answers_summary", "N/A")
+                    "答案汇总": sections["writing"]["part_b"].get("answers_summary", "N/A")
                 }
         
         # 处理每个题目数据
@@ -189,6 +209,35 @@ class DataOrganizer:
         
         # 记录已生成的题型对应表（用于处理题型名称差异）
         section_type_mapping = {}
+        
+        # 如果questions列表为空或只有少量题目，尝试创建全部52题的题目结构
+        if len(questions) < 10:  # 假设少于10道题意味着数据不完整
+            logger.warning(f"API返回的题目数量不足(仅有{len(questions)}道)，创建完整题目结构")
+            temp_questions = []
+            
+            # 保存原来的questions，以便后续合并
+            original_questions = questions.copy()
+            
+            # 创建52道题的基本结构
+            for num in range(1, 53):
+                question_type = self._get_question_type(num)
+                temp_questions.append({
+                    "number": num,
+                    "section_type": question_type,
+                    "stem": f"[题号 {num}]",
+                    "options": "",
+                    "correct_answer": "",
+                    "distractor_options": ""
+                })
+            
+            # 将原始questions中的数据合并到临时questions中
+            for orig_q in original_questions:
+                if "number" in orig_q and 1 <= orig_q["number"] <= 52:
+                    # 用原始数据覆盖对应题号的临时数据
+                    temp_questions[orig_q["number"]-1] = orig_q
+            
+            # 用合并后的数据替换原始questions
+            questions = temp_questions
         
         for question in questions:
             try:
@@ -204,6 +253,10 @@ class DataOrganizer:
                     mapped_section_type = self._map_section_type(section_type, number)
                     section_type_mapping[number] = mapped_section_type
                 
+                # 获取正确答案并解析为单独的答案格式
+                correct_answer = question.get("correct_answer", "")
+                individual_answer = self._parse_individual_answer(number, correct_answer, answer_mappings)
+                
                 # 构建标准格式的题目数据
                 question_data = {
                     "年份": year,
@@ -212,75 +265,77 @@ class DataOrganizer:
                     "题目编号": str(number),
                     "题干": question.get("stem", ""),
                     "选项": question.get("options", ""),
-                    "正确答案": question.get("correct_answer", ""),
-                    "干扰选项": question.get("distractor_options", "")
+                    "正确答案": correct_answer,
+                    "干扰选项": question.get("distractor_options", ""),
+                    "试卷答案": individual_answer  # 每道题的单独答案（如"A"、"B"等）
                 }
                 
                 # 添加原文信息（根据映射后的题型）
                 if mapped_section_type in section_texts:
                     question_data["原文（卷面）"] = section_texts[mapped_section_type]["原文（卷面）"]
                     question_data["原文（还原后）"] = section_texts[mapped_section_type]["原文（还原后）"]
-                    question_data["试卷答案"] = section_texts[mapped_section_type]["试卷答案"]
+                    # 保存板块的答案汇总（用于调试）
+                    question_data["答案汇总"] = section_texts[mapped_section_type]["答案汇总"]
                 else:
                     # 如果找不到对应的题型，尝试使用原始题型
                     if section_type in section_texts:
                         question_data["原文（卷面）"] = section_texts[section_type]["原文（卷面）"]
                         question_data["原文（还原后）"] = section_texts[section_type]["原文（还原后）"]
-                        question_data["试卷答案"] = section_texts[section_type]["试卷答案"]
+                        question_data["答案汇总"] = section_texts[section_type]["答案汇总"]
                     else:
                         # 最后尝试根据题号范围来匹配
                         found_section = False
                         if 1 <= number <= 20 and "完形填空" in section_texts:
                             question_data["原文（卷面）"] = section_texts["完形填空"]["原文（卷面）"]
                             question_data["原文（还原后）"] = section_texts["完形填空"]["原文（还原后）"]
-                            question_data["试卷答案"] = section_texts["完形填空"]["试卷答案"]
+                            question_data["答案汇总"] = section_texts["完形填空"]["答案汇总"]
                             found_section = True
                         elif 21 <= number <= 25 and "阅读理解 Text 1" in section_texts:
                             question_data["原文（卷面）"] = section_texts["阅读理解 Text 1"]["原文（卷面）"]
                             question_data["原文（还原后）"] = section_texts["阅读理解 Text 1"]["原文（还原后）"]
-                            question_data["试卷答案"] = section_texts["阅读理解 Text 1"]["试卷答案"]
+                            question_data["答案汇总"] = section_texts["阅读理解 Text 1"]["答案汇总"]
                             found_section = True
                         elif 26 <= number <= 30 and "阅读理解 Text 2" in section_texts:
                             question_data["原文（卷面）"] = section_texts["阅读理解 Text 2"]["原文（卷面）"]
                             question_data["原文（还原后）"] = section_texts["阅读理解 Text 2"]["原文（还原后）"]
-                            question_data["试卷答案"] = section_texts["阅读理解 Text 2"]["试卷答案"]
+                            question_data["答案汇总"] = section_texts["阅读理解 Text 2"]["答案汇总"]
                             found_section = True
                         elif 31 <= number <= 35 and "阅读理解 Text 3" in section_texts:
                             question_data["原文（卷面）"] = section_texts["阅读理解 Text 3"]["原文（卷面）"]
                             question_data["原文（还原后）"] = section_texts["阅读理解 Text 3"]["原文（还原后）"]
-                            question_data["试卷答案"] = section_texts["阅读理解 Text 3"]["试卷答案"]
+                            question_data["答案汇总"] = section_texts["阅读理解 Text 3"]["答案汇总"]
                             found_section = True
                         elif 36 <= number <= 40 and "阅读理解 Text 4" in section_texts:
                             question_data["原文（卷面）"] = section_texts["阅读理解 Text 4"]["原文（卷面）"]
                             question_data["原文（还原后）"] = section_texts["阅读理解 Text 4"]["原文（还原后）"]
-                            question_data["试卷答案"] = section_texts["阅读理解 Text 4"]["试卷答案"]
+                            question_data["答案汇总"] = section_texts["阅读理解 Text 4"]["答案汇总"]
                             found_section = True
                         elif 41 <= number <= 45 and "新题型" in section_texts:
                             question_data["原文（卷面）"] = section_texts["新题型"]["原文（卷面）"]
                             question_data["原文（还原后）"] = section_texts["新题型"]["原文（还原后）"]
-                            question_data["试卷答案"] = section_texts["新题型"]["试卷答案"]
+                            question_data["答案汇总"] = section_texts["新题型"]["答案汇总"]
                             found_section = True
                         elif 46 <= number <= 50 and "翻译" in section_texts:
                             question_data["原文（卷面）"] = section_texts["翻译"]["原文（卷面）"]
                             question_data["原文（还原后）"] = section_texts["翻译"]["原文（还原后）"]
-                            question_data["试卷答案"] = section_texts["翻译"]["试卷答案"]
+                            question_data["答案汇总"] = section_texts["翻译"]["答案汇总"]
                             found_section = True
                         elif number == 51 and "写作A" in section_texts:
                             question_data["原文（卷面）"] = section_texts["写作A"]["原文（卷面）"]
                             question_data["原文（还原后）"] = section_texts["写作A"]["原文（还原后）"]
-                            question_data["试卷答案"] = section_texts["写作A"]["试卷答案"]
+                            question_data["答案汇总"] = section_texts["写作A"]["答案汇总"]
                             found_section = True
                         elif number == 52 and "写作B" in section_texts:
                             question_data["原文（卷面）"] = section_texts["写作B"]["原文（卷面）"]
                             question_data["原文（还原后）"] = section_texts["写作B"]["原文（还原后）"]
-                            question_data["试卷答案"] = section_texts["写作B"]["试卷答案"]
+                            question_data["答案汇总"] = section_texts["写作B"]["答案汇总"]
                             found_section = True
                         
                         if not found_section:
                             # 如果依然找不到，使用默认值
                             question_data["原文（卷面）"] = ""
                             question_data["原文（还原后）"] = ""
-                            question_data["试卷答案"] = ""
+                            question_data["答案汇总"] = ""
                 
                 # 添加缺失字段的默认值
                 complete_question = self._add_missing_fields(question_data)
@@ -297,6 +352,9 @@ class DataOrganizer:
                 organized_data.sort(key=lambda x: int(x.get("题目编号", 0)))
             except Exception as e:
                 logger.warning(f"按题目编号排序失败: {str(e)}")
+        
+        # 确保数据集完整(52题)
+        organized_data = self.ensure_complete_dataset(organized_data, year, exam_type)
         
         logger.info(f"新格式数据处理完成，共 {len(organized_data)} 道题目")
         return organized_data
@@ -677,4 +735,84 @@ class DataOrganizer:
                 return "写作"
         
         # 如果无法判断，返回原始题型
-        return section_type 
+        return section_type
+    
+    def _parse_answers_summary(self, answers_summary):
+        """
+        解析答案汇总字符串，转换为题号->答案的映射
+        
+        Args:
+            answers_summary (str): 答案汇总字符串，如"1.A 2.C 3.B 4.D 5.A"
+            
+        Returns:
+            dict: 题号到答案的映射，如{1: "A", 2: "C", 3: "B", 4: "D", 5: "A"}
+        """
+        if not answers_summary:
+            return {}
+        
+        answer_map = {}
+        
+        # 尝试解析常见格式的答案汇总
+        try:
+            # 处理形如"1.A 2.C 3.B"的格式
+            items = answers_summary.split()
+            for item in items:
+                # 处理形如"1.A"或"1-A"或"1:A"或"1A"的格式
+                parts = re.split(r'[.\-:：]', item, 1)
+                if len(parts) == 2:
+                    question_num = parts[0].strip()
+                    answer = parts[1].strip()
+                    if question_num.isdigit():
+                        answer_map[int(question_num)] = answer
+                elif len(parts) == 1 and len(item) >= 2:
+                    # 处理形如"1A"的无分隔符格式
+                    match = re.match(r'(\d+)([A-D]|\[[A-D]\])', item)
+                    if match:
+                        question_num = match.group(1)
+                        answer = match.group(2)
+                        if question_num.isdigit():
+                            answer_map[int(question_num)] = answer
+        except Exception as e:
+            logger.error(f"解析答案汇总失败: {str(e)}, 原文: {answers_summary}")
+        
+        return answer_map
+
+    def _parse_individual_answer(self, question_number, correct_answer, answer_mappings):
+        """
+        解析单个题目的答案，确保返回格式统一的答案字符串
+        
+        Args:
+            question_number (int): 题目编号
+            correct_answer (str): 题目中的正确答案字段
+            answer_mappings (dict): 从答案汇总中解析的题号->答案映射
+            
+        Returns:
+            str: 格式化的答案字符串，如"A"或"B"
+        """
+        # 优先使用答案汇总中的答案
+        if question_number in answer_mappings:
+            answer = answer_mappings[question_number]
+            # 提取答案字母部分（比如从"A. Without"中提取"A"）
+            if isinstance(answer, str) and len(answer) > 0:
+                # 如果是形如"A. Option"或"[A]Option"的格式，提取字母部分
+                match = re.match(r'([A-D])[.\s]|^\[([A-D])\]', answer)
+                if match:
+                    letter = match.group(1) or match.group(2)
+                    return letter
+                return answer
+        
+        # 如果答案汇总中没有，尝试从correct_answer中提取
+        if correct_answer:
+            # 提取字母部分
+            match = re.match(r'([A-D])[.\s]|^\[([A-D])\]', correct_answer)
+            if match:
+                letter = match.group(1) or match.group(2)
+                return letter
+            # 如果是完整的答案格式，尝试提取首字母
+            if len(correct_answer) > 0:
+                first_char = correct_answer[0]
+                if first_char in "ABCD":
+                    return first_char
+        
+        # 如果都提取不到，返回原始correct_answer或空字符串
+        return correct_answer or "" 

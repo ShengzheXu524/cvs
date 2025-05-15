@@ -13,20 +13,16 @@ import traceback
 from pathlib import Path
 from tqdm import tqdm
 
-# 导入自定义模块
-from docx_reader import DocxReader
-from claude_api import ClaudeAPI
-from data_organizer import DataOrganizer
-from csv_generator import CSVGenerator
-from sentence_splitter import split_sentences
-from utils import (
-    setup_logging,
-    load_api_key,
-    ensure_directory_exists,
-    get_all_docx_files,
-    extract_exam_info_from_filename,
-    make_output_path
-)
+# 添加父目录到sys.path，确保可以导入src目录下的模块
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# 导入项目模块
+from src.claude_api import ClaudeAPI
+from src.docx_reader import DocxReader
+from src.data_organizer import DataOrganizer
+from src.csv_generator import CSVGenerator
+from src.utils import setup_logging, load_api_key, ensure_directory_exists, get_all_docx_files, extract_exam_info_from_filename, make_output_path
+from src.sentence_splitter import split_sentences
 
 def process_single_file(input_file, output_file, api_key=None, model=None, debug=False):
     """
@@ -52,7 +48,10 @@ def process_single_file(input_file, output_file, api_key=None, model=None, debug
         
         # 创建各模块实例
         docx_reader = DocxReader()
-        claude_api = ClaudeAPI(api_key=api_key, model=model if model else "claude-3-7-sonnet-20240229")
+        
+        # 简化API客户端初始化，避免使用额外的参数
+        claude_api = ClaudeAPI(api_key=api_key, model=model if model else "claude-3-5-haiku-20241022")
+        
         data_organizer = DataOrganizer()
         csv_generator = CSVGenerator()
         
@@ -164,7 +163,7 @@ def main():
     parser.add_argument("--input", required=True, help="输入的docx文件路径或目录")
     parser.add_argument("--output", required=True, help="输出的CSV文件路径或目录")
     parser.add_argument("--api_key", help="Claude API密钥（如不提供将尝试从环境变量获取）")
-    parser.add_argument("--model", default="claude-3-7-sonnet-20240229", help="要使用的Claude模型")
+    parser.add_argument("--model", default="claude-3-5-haiku-20241022", help="要使用的Claude模型")
     parser.add_argument("--batch", action="store_true", help="批处理模式，处理目录下所有docx文件")
     parser.add_argument("--log", choices=["debug", "info", "warning", "error"], default="info", help="日志级别")
     parser.add_argument("--debug", action="store_true", help="调试模式，保存中间结果")
