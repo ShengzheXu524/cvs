@@ -194,6 +194,12 @@ class ClaudeAPI:
 3. 各题目的编号、题干、选项、答案及干扰选项
 4. 完形填空和特定新题型的还原后原文
 
+# 重要说明
+- "原文"是指该题对应题型板块的试卷上的完整原文内容，不是单个题目的句子
+- 例如：完形填空第1题的"原文（卷面）"应该是整篇完形填空文章（包含所有空格标记[1], [2]等）
+- 同样，阅读理解Text 1的第21题"原文（卷面）"应该是整篇Text 1的阅读文章
+- 每个题型板块的原文只需提取一次，相同题型的所有题目共享相同的原文
+
 # 输出格式
 请以下面的JSON格式返回结果：
 
@@ -228,21 +234,21 @@ class ClaudeAPI:
       }
     },
     "new_type": {
-      "original_text": "新题型原文",
+      "original_text": "新题型原文（完整文章）",
       "restored_text": "新题型还原后原文（如果有的话，否则与原文相同）",
       "answers_summary": "新题型答案汇总"
     },
     "translation": {
-      "original_text": "翻译题原文",
+      "original_text": "翻译题原文（完整段落）",
       "answers_summary": "无客观答案，可填写'N/A'"
     },
     "writing": {
       "part_a": {
-        "original_text": "写作A题目",
+        "original_text": "写作A题目（完整题目描述）",
         "answers_summary": "无客观答案，可填写'N/A'"
       },
       "part_b": {
-        "original_text": "写作B题目",
+        "original_text": "写作B题目（完整题目描述）",
         "answers_summary": "无客观答案，可填写'N/A'"
       }
     }
@@ -250,7 +256,7 @@ class ClaudeAPI:
   "questions": [
     {
       "number": 1,
-      "section_type": "完型填空",
+      "section_type": "完形填空",
       "stem": "题干（完形填空通常为空或'/'）",
       "options": "A. Without, B. Though, C. Despite, D. Besides",
       "correct_answer": "A. Without",
@@ -268,6 +274,8 @@ class ClaudeAPI:
   ]
 }
 ```
+
+请提取完整的题型原文，确保"原文（卷面）"字段包含整篇文章或段落，而不仅仅是单个题目对应的句子。完形填空的原文应包含所有空格标记，阅读理解的原文应包含整篇阅读文章。
 
 只返回提取的JSON数据，不要包含任何其他解释或说明文字。确保JSON格式正确无误。
 """

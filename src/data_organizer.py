@@ -137,12 +137,21 @@ class DataOrganizer:
         if "reading" in sections:
             for i, text_key in enumerate(["text_1", "text_2", "text_3", "text_4"]):
                 if text_key in sections["reading"]:
-                    section_name = f"阅读 Text {i+1}"
-                    section_texts[section_name] = {
-                        "原文（卷面）": sections["reading"][text_key].get("original_text", ""),
-                        "原文（还原后）": sections["reading"][text_key].get("original_text", ""),  # 阅读没有还原版本
-                        "试卷答案": sections["reading"][text_key].get("answers_summary", "")
-                    }
+                    section_name = f"阅读理解" if i == 0 else f"阅读理解 Text {i+1}"
+                    if i == 0:
+                        # 为第一篇阅读文章设置两个名称：既可以是"阅读理解"也可以是"阅读理解 Text 1"
+                        section_texts["阅读理解"] = {
+                            "原文（卷面）": sections["reading"][text_key].get("original_text", ""),
+                            "原文（还原后）": sections["reading"][text_key].get("original_text", ""),  # 阅读没有还原版本
+                            "试卷答案": sections["reading"][text_key].get("answers_summary", "")
+                        }
+                        section_texts["阅读理解 Text 1"] = section_texts["阅读理解"]
+                    else:
+                        section_texts[section_name] = {
+                            "原文（卷面）": sections["reading"][text_key].get("original_text", ""),
+                            "原文（还原后）": sections["reading"][text_key].get("original_text", ""),  # 阅读没有还原版本
+                            "试卷答案": sections["reading"][text_key].get("answers_summary", "")
+                        }
         
         # 新题型
         if "new_type" in sections:
@@ -178,17 +187,28 @@ class DataOrganizer:
         # 处理每个题目数据
         organized_data = []
         
+        # 记录已生成的题型对应表（用于处理题型名称差异）
+        section_type_mapping = {}
+        
         for question in questions:
             try:
                 # 获取题号和题型
                 number = question.get("number", 0)
                 section_type = question.get("section_type", "")
                 
+                # 如果之前遇到过相同题号范围的题型，使用之前的映射
+                if number in section_type_mapping:
+                    mapped_section_type = section_type_mapping[number]
+                else:
+                    # 根据题号范围推断题型
+                    mapped_section_type = self._map_section_type(section_type, number)
+                    section_type_mapping[number] = mapped_section_type
+                
                 # 构建标准格式的题目数据
                 question_data = {
                     "年份": year,
                     "考试类型": exam_type,
-                    "题型": section_type,
+                    "题型": mapped_section_type,
                     "题目编号": str(number),
                     "题干": question.get("stem", ""),
                     "选项": question.get("options", ""),
@@ -196,16 +216,71 @@ class DataOrganizer:
                     "干扰选项": question.get("distractor_options", "")
                 }
                 
-                # 添加原文信息
-                if section_type in section_texts:
-                    question_data["原文（卷面）"] = section_texts[section_type]["原文（卷面）"]
-                    question_data["原文（还原后）"] = section_texts[section_type]["原文（还原后）"]
-                    question_data["试卷答案"] = section_texts[section_type]["试卷答案"]
+                # 添加原文信息（根据映射后的题型）
+                if mapped_section_type in section_texts:
+                    question_data["原文（卷面）"] = section_texts[mapped_section_type]["原文（卷面）"]
+                    question_data["原文（还原后）"] = section_texts[mapped_section_type]["原文（还原后）"]
+                    question_data["试卷答案"] = section_texts[mapped_section_type]["试卷答案"]
                 else:
-                    # 如果找不到对应的题型，使用默认值
-                    question_data["原文（卷面）"] = ""
-                    question_data["原文（还原后）"] = ""
-                    question_data["试卷答案"] = ""
+                    # 如果找不到对应的题型，尝试使用原始题型
+                    if section_type in section_texts:
+                        question_data["原文（卷面）"] = section_texts[section_type]["原文（卷面）"]
+                        question_data["原文（还原后）"] = section_texts[section_type]["原文（还原后）"]
+                        question_data["试卷答案"] = section_texts[section_type]["试卷答案"]
+                    else:
+                        # 最后尝试根据题号范围来匹配
+                        found_section = False
+                        if 1 <= number <= 20 and "完形填空" in section_texts:
+                            question_data["原文（卷面）"] = section_texts["完形填空"]["原文（卷面）"]
+                            question_data["原文（还原后）"] = section_texts["完形填空"]["原文（还原后）"]
+                            question_data["试卷答案"] = section_texts["完形填空"]["试卷答案"]
+                            found_section = True
+                        elif 21 <= number <= 25 and "阅读理解 Text 1" in section_texts:
+                            question_data["原文（卷面）"] = section_texts["阅读理解 Text 1"]["原文（卷面）"]
+                            question_data["原文（还原后）"] = section_texts["阅读理解 Text 1"]["原文（还原后）"]
+                            question_data["试卷答案"] = section_texts["阅读理解 Text 1"]["试卷答案"]
+                            found_section = True
+                        elif 26 <= number <= 30 and "阅读理解 Text 2" in section_texts:
+                            question_data["原文（卷面）"] = section_texts["阅读理解 Text 2"]["原文（卷面）"]
+                            question_data["原文（还原后）"] = section_texts["阅读理解 Text 2"]["原文（还原后）"]
+                            question_data["试卷答案"] = section_texts["阅读理解 Text 2"]["试卷答案"]
+                            found_section = True
+                        elif 31 <= number <= 35 and "阅读理解 Text 3" in section_texts:
+                            question_data["原文（卷面）"] = section_texts["阅读理解 Text 3"]["原文（卷面）"]
+                            question_data["原文（还原后）"] = section_texts["阅读理解 Text 3"]["原文（还原后）"]
+                            question_data["试卷答案"] = section_texts["阅读理解 Text 3"]["试卷答案"]
+                            found_section = True
+                        elif 36 <= number <= 40 and "阅读理解 Text 4" in section_texts:
+                            question_data["原文（卷面）"] = section_texts["阅读理解 Text 4"]["原文（卷面）"]
+                            question_data["原文（还原后）"] = section_texts["阅读理解 Text 4"]["原文（还原后）"]
+                            question_data["试卷答案"] = section_texts["阅读理解 Text 4"]["试卷答案"]
+                            found_section = True
+                        elif 41 <= number <= 45 and "新题型" in section_texts:
+                            question_data["原文（卷面）"] = section_texts["新题型"]["原文（卷面）"]
+                            question_data["原文（还原后）"] = section_texts["新题型"]["原文（还原后）"]
+                            question_data["试卷答案"] = section_texts["新题型"]["试卷答案"]
+                            found_section = True
+                        elif 46 <= number <= 50 and "翻译" in section_texts:
+                            question_data["原文（卷面）"] = section_texts["翻译"]["原文（卷面）"]
+                            question_data["原文（还原后）"] = section_texts["翻译"]["原文（还原后）"]
+                            question_data["试卷答案"] = section_texts["翻译"]["试卷答案"]
+                            found_section = True
+                        elif number == 51 and "写作A" in section_texts:
+                            question_data["原文（卷面）"] = section_texts["写作A"]["原文（卷面）"]
+                            question_data["原文（还原后）"] = section_texts["写作A"]["原文（还原后）"]
+                            question_data["试卷答案"] = section_texts["写作A"]["试卷答案"]
+                            found_section = True
+                        elif number == 52 and "写作B" in section_texts:
+                            question_data["原文（卷面）"] = section_texts["写作B"]["原文（卷面）"]
+                            question_data["原文（还原后）"] = section_texts["写作B"]["原文（还原后）"]
+                            question_data["试卷答案"] = section_texts["写作B"]["试卷答案"]
+                            found_section = True
+                        
+                        if not found_section:
+                            # 如果依然找不到，使用默认值
+                            question_data["原文（卷面）"] = ""
+                            question_data["原文（还原后）"] = ""
+                            question_data["试卷答案"] = ""
                 
                 # 添加缺失字段的默认值
                 complete_question = self._add_missing_fields(question_data)
@@ -539,4 +614,67 @@ class DataOrganizer:
                 item["原文（句子拆解后）"] = item.get("原文（还原后）", "")
         
         logger.info("句子拆分处理完成")
-        return data 
+        return data
+    
+    def _map_section_type(self, section_type, question_number):
+        """
+        根据题号和提供的题型名称，映射到标准题型名称。
+        
+        Args:
+            section_type (str): 原始题型名称
+            question_number (int): 题目编号
+            
+        Returns:
+            str: 标准化后的题型名称
+        """
+        # 根据题号范围判断题型
+        if 1 <= question_number <= 20:
+            return "完形填空"
+        elif 21 <= question_number <= 25:
+            return "阅读理解 Text 1"
+        elif 26 <= question_number <= 30:
+            return "阅读理解 Text 2"
+        elif 31 <= question_number <= 35:
+            return "阅读理解 Text 3"
+        elif 36 <= question_number <= 40:
+            return "阅读理解 Text 4"
+        elif 41 <= question_number <= 45:
+            return "新题型"
+        elif 46 <= question_number <= 50:
+            return "翻译"
+        elif question_number == 51:
+            return "写作A"
+        elif question_number == 52:
+            return "写作B"
+        
+        # 如果题号不在标准范围内，尝试根据提供的section_type判断
+        section_type_lower = section_type.lower() if section_type else ""
+        
+        if "完形" in section_type_lower or "cloze" in section_type_lower:
+            return "完形填空"
+        elif "阅读" in section_type_lower or "text" in section_type_lower or "reading" in section_type_lower:
+            # 如果包含数字，尝试提取
+            if "text 1" in section_type_lower or "text1" in section_type_lower:
+                return "阅读理解 Text 1"
+            elif "text 2" in section_type_lower or "text2" in section_type_lower:
+                return "阅读理解 Text 2"
+            elif "text 3" in section_type_lower or "text3" in section_type_lower:
+                return "阅读理解 Text 3"
+            elif "text 4" in section_type_lower or "text4" in section_type_lower:
+                return "阅读理解 Text 4"
+            else:
+                return "阅读理解"
+        elif "新题型" in section_type_lower or "new" in section_type_lower:
+            return "新题型"
+        elif "翻译" in section_type_lower or "transl" in section_type_lower:
+            return "翻译"
+        elif "写作" in section_type_lower or "writing" in section_type_lower:
+            if "a" in section_type_lower:
+                return "写作A"
+            elif "b" in section_type_lower:
+                return "写作B"
+            else:
+                return "写作"
+        
+        # 如果无法判断，返回原始题型
+        return section_type 
