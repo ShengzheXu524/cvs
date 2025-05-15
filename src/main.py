@@ -49,7 +49,8 @@ def process_single_file(input_file, output_file, api_key=None, model=None, debug
         # 创建各模块实例
         docx_reader = DocxReader()
         
-        # 简化API客户端初始化，避免使用额外的参数
+        # 简化API客户端初始化，使用简单直接的方式
+        # 避免使用复杂的参数或配置，可能导致兼容性问题
         claude_api = ClaudeAPI(api_key=api_key, model=model if model else "claude-3-5-haiku-20241022")
         
         data_organizer = DataOrganizer()

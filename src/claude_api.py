@@ -9,8 +9,8 @@ import os
 import json
 import logging
 import time
-from anthropic import Anthropic
-from .model_config import get_model
+import requests
+from .model_config import get_model, get_model_max_tokens
 
 logger = logging.getLogger("考研英语真题处理.claude_api")
 
@@ -35,105 +35,72 @@ class ClaudeAPI:
             self.api_key = os.getenv("CLAUDE_API_KEY")
             
         if not self.api_key:
-            raise ValueError("未提供Claude API密钥。请通过参数提供或设置CLAUDE_API_KEY环境变量。")
+            raise ValueError("未提供API密钥，请设置环境变量CLAUDE_API_KEY或在初始化时提供api_key参数")
         
-        # 使用model_config模块获取模型名称    
+        # 使用模型配置模块获取模型名称
         self.model = get_model(model)
+        # 获取模型的最大token限制
+        self.max_tokens = get_model_max_tokens(self.model)
+        logger.info(f"使用模型: {self.model}, 最大token: {self.max_tokens}")
         
-        # 使用简化的初始化方式，避免版本兼容问题
-        # 只使用api_key参数，不使用任何其他可能导致兼容性问题的参数
-        self.client = Anthropic(api_key=self.api_key)
-        logger.info(f"初始化Claude API客户端，使用模型: {self.model}")
-        
-    def analyze_document(self, document_text, max_retries=3, retry_delay=5):
+        # API端点和请求头
+        self.api_endpoint = "https://api.anthropic.com/v1/messages"
+        self.headers = {
+            "x-api-key": self.api_key,
+            "content-type": "application/json",
+            "anthropic-version": "2023-06-01"
+        }
+    
+    def _make_api_request(self, messages, max_tokens=None, temperature=0.0, max_retries=3, retry_delay=5):
         """
-        发送文档内容到Claude API进行分析。
+        发送API请求到Claude，使用直接的HTTP请求而不是anthropic库。
         
         Args:
-            document_text (str): 文档文本内容
-            max_retries (int, optional): 最大重试次数
-            retry_delay (int, optional): 重试延迟时间（秒）
-        
+            messages (list): 消息列表
+            max_tokens (int, optional): 最大生成的token数，默认为None（使用模型的最大token数）
+            temperature (float): 温度参数，控制生成的随机性
+            max_retries (int): 最大重试次数
+            retry_delay (int): 重试间隔（秒）
+            
         Returns:
-            dict: Claude API的分析结果
+            dict: API响应结果
         """
-        system_prompt = """
-你是一个专业的考研英语真题文档分析工具。你的任务是分析考研英语真题docx文件的内容，提取所有题目和原文信息，并按照规定格式输出结构化数据。
-
-请仔细识别文件中的考试年份、考试类型（英语一或英语二）、各个题型、原文内容、题目内容、选项和答案等信息。
-
-文档内容可能包括：
-1. 完形填空题（题号1-20）：包含原文和选项
-2. 阅读理解题（题号21-40）：包括四篇阅读短文（Text 1至Text 4），每篇有5个题目
-3. 新题型（题号41-45）：包含原文和问题
-4. 翻译题（题号46-50）：包含原文段落
-5. 写作题（题号51-52）：包含写作A和写作B的题目说明
-
-请按照以下结构对每个题目进行分析，并以JSON格式返回：
-1. 所有题目共52个，按题号1-52排列
-2. 对于每个题目，提取以下信息：
-   - 年份：考试年份
-   - 考试类型：英语（一）或英语（二）
-   - 题型：完形填空、阅读 Text 1-4、新题型、翻译、写作A或写作B
-   - 原文（卷面）：原始试卷上的原文内容，完形填空需包含空格标记如[1], [2]等
-   - 试卷答案：试卷上的标准答案
-   - 题目编号：1-52之间的数字
-   - 题干：题目的具体内容（完形填空可空）
-   - 选项：选择题的选项（A, B, C, D）
-   - 正确答案：该题的正确答案
-   - 原文（还原后）：将正确答案填入原文后的完整版本
-   - 干扰选项：错误的选项列表
-
-只返回JSON格式的分析结果，不要包含任何其他解释或额外文本。确保JSON结构完整，所有字段名称准确，值符合要求。
-"""
+        # 如果未指定max_tokens，使用模型的最大值
+        if max_tokens is None or max_tokens > self.max_tokens:
+            max_tokens = self.max_tokens
+            
+        payload = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "messages": messages
+        }
         
-        user_message = f"""
-请分析以下考研英语真题文档，提取结构化信息：
-
-{document_text}
-
-请以JSON格式返回分析结果，确保包含所有52个题目（题号1-52）的完整信息。每个题目需包含：年份、考试类型、题型、原文（卷面）、试卷答案、题目编号、题干、选项、正确答案、原文（还原后）、干扰选项。
-"""
-
         for attempt in range(max_retries):
             try:
-                logger.info(f"正在发送API请求，尝试次数: {attempt + 1}/{max_retries}")
+                logger.info(f"发送API请求 (尝试 {attempt+1}/{max_retries})...")
                 
-                # 使用流式处理API，避免超时问题
-                response_text = ""
-                with self.client.messages.stream(
-                    model=self.model,
-                    system=system_prompt,
-                    messages=[{"role": "user", "content": user_message}],
-                    max_tokens=20000,
-                    temperature=0.1,
-                ) as stream:
-                    logger.info("开始接收流式响应...")
-                    for text in stream.text_stream:
-                        response_text += text
-                        # 可选：每收到1000个字符打印一次进度
-                        if len(response_text) % 1000 == 0:
-                            logger.debug(f"已接收 {len(response_text)} 个字符")
+                response = requests.post(
+                    self.api_endpoint,
+                    headers=self.headers,
+                    json=payload
+                )
                 
-                logger.info(f"流式传输完成，共接收 {len(response_text)} 个字符")
-                
-                # 尝试解析JSON
-                try:
-                    # 提取JSON部分（如果有额外文本）
-                    json_text = self._extract_json(response_text)
-                    result = json.loads(json_text)
-                    logger.info("成功接收并解析API响应")
-                    return result
-                except json.JSONDecodeError as e:
-                    logger.warning(f"JSON解析失败: {str(e)}")
-                    logger.debug(f"接收到的响应: {response_text}")
+                if response.status_code == 200:
+                    # 成功响应
+                    return response.json()
+                else:
+                    # 错误响应
+                    error_data = response.json()
+                    logger.error(f"API请求失败，状态码: {response.status_code}")
+                    logger.error(f"错误详情: {json.dumps(error_data, indent=2)}")
                     
                     if attempt < max_retries - 1:
                         logger.info(f"将在{retry_delay}秒后重试")
                         time.sleep(retry_delay)
                     else:
-                        logger.error("达到最大重试次数，返回原始响应文本")
-                        return {"error": "JSON解析失败", "raw_response": response_text}
+                        logger.error("达到最大重试次数")
+                        return {"error": error_data}
             
             except Exception as e:
                 logger.error(f"API调用错误: {str(e)}")
@@ -184,10 +151,57 @@ class ClaudeAPI:
         
         # 如果没有找到明确的JSON标记，返回原始文本
         return text
+    
+    def analyze_document(self, document_text, max_retries=3, retry_delay=5):
+        """
+        使用Claude分析文档内容。
         
+        Args:
+            document_text (str): 文档文本内容
+            max_retries (int, optional): 最大重试次数
+            retry_delay (int, optional): 重试延迟时间（秒）
+        
+        Returns:
+            dict: 分析结果
+        """
+        logger.info("开始分析文档...")
+        
+        # 构建消息
+        messages = [
+            {"role": "user", "content": f"请分析以下考研英语真题文档，提取所有题目内容和答案:\n\n{document_text}"}
+        ]
+        
+        try:
+            # 发送API请求，不指定max_tokens，让模型自行决定返回长度
+            result = self._make_api_request(
+                messages=messages,
+                temperature=0.0,
+                max_retries=max_retries,
+                retry_delay=retry_delay
+            )
+            
+            if "error" in result:
+                logger.error("分析文档失败")
+                return result
+            
+            # 提取响应内容
+            content = result.get("content", [{}])[0].get("text", "")
+            
+            # 尝试从文本中提取JSON
+            try:
+                json_data = self._extract_json(content)
+                return json.loads(json_data)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON解析失败: {str(e)}")
+                return {"error": "JSON解析失败", "raw_response": content}
+            
+        except Exception as e:
+            logger.exception(f"分析文档时出错: {str(e)}")
+            return {"error": str(e)}
+    
     def extract_structured_data(self, document_text, max_retries=3, retry_delay=5):
         """
-        使用更详细的提示词从文档中提取结构化数据，使用流式API避免超时。
+        使用更详细的提示词从文档中提取结构化数据。
         
         Args:
             document_text (str): 文档文本内容
@@ -328,15 +342,8 @@ class ClaudeAPI:
       "options": null,
       "correct_answer": null,
       "distractor_options": null
-    },
-    {
-      "number": 52,
-      "section_type": "写作B",
-      "stem": "Directions: Write an essay of about 200 words on the following topic: The impact of technology on modern education",
-      "options": null,
-      "correct_answer": null,
-      "distractor_options": null
     }
+    // 注意：实际返回结果必须包含所有52个题目（题号1-52），以上仅为每种题型的示例
   ]
 }
 ```
@@ -354,54 +361,37 @@ class ClaudeAPI:
 只返回提取的JSON数据，不要包含任何其他解释或说明文字。确保JSON格式正确无误。
 """
 
-        for attempt in range(max_retries):
-            try:
-                logger.info(f"正在发送结构化数据提取请求，尝试次数: {attempt + 1}/{max_retries}")
-                
-                # 使用流式API处理，避免处理大文档时的超时问题
-                response_text = ""
-                logger.info("开始使用流式API接收结构化数据...")
-                
-                with self.client.messages.stream(
-                    model=self.model,
-                    system=system_prompt,
-                    messages=[{"role": "user", "content": document_text}],
-                    max_tokens=30000,  # 增大token数以容纳完整响应
-                    temperature=0.1,
-                ) as stream:
-                    for text in stream.text_stream:
-                        response_text += text
-                        # 每处理一定数量的字符输出一次进度
-                        if len(response_text) % 2000 == 0:
-                            logger.info(f"已接收 {len(response_text)} 个字符...")
-                
-                logger.info(f"流式传输完成，共接收 {len(response_text)} 个字符")
-                
-                # 尝试解析JSON
-                try:
-                    # 提取JSON部分
-                    json_text = self._extract_json(response_text)
-                    result = json.loads(json_text)
-                    logger.info("成功接收并解析结构化数据")
-                    return result
-                except json.JSONDecodeError as e:
-                    logger.warning(f"结构化数据JSON解析失败: {str(e)}")
-                    
-                    if attempt < max_retries - 1:
-                        logger.info(f"将在{retry_delay}秒后重试")
-                        time.sleep(retry_delay)
-                    else:
-                        logger.error("达到最大重试次数，返回原始响应文本")
-                        return {"error": "JSON解析失败", "raw_response": response_text}
-            
-            except Exception as e:
-                logger.error(f"结构化数据提取API调用错误: {str(e)}")
-                
-                if attempt < max_retries - 1:
-                    logger.info(f"将在{retry_delay}秒后重试")
-                    time.sleep(retry_delay)
-                else:
-                    logger.error("达到最大重试次数")
-                    raise
+        # 构建消息
+        messages = [
+            {"role": "user", "content": f"{system_prompt}\n\n文档内容:\n{document_text}"}
+        ]
         
-        return {"error": "所有结构化数据提取尝试均失败"} 
+        # 使用足够大的max_tokens值，确保返回完整内容
+        logger.info("开始提取结构化数据...")
+        try:
+            result = self._make_api_request(
+                messages=messages,
+                # 使用模型配置的最大值，会被_make_api_request自动处理为合适的值
+                temperature=0.0,
+                max_retries=max_retries,
+                retry_delay=retry_delay
+            )
+            
+            if "error" in result:
+                logger.error("提取结构化数据失败")
+                return result
+            
+            # 提取响应内容
+            content = result.get("content", [{}])[0].get("text", "")
+            
+            # 尝试从文本中提取JSON
+            try:
+                json_str = self._extract_json(content)
+                return json.loads(json_str)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON解析失败: {str(e)}")
+                return {"error": "JSON解析失败", "raw_response": content}
+        
+        except Exception as e:
+            logger.exception(f"提取结构化数据时出错: {str(e)}")
+            return {"error": str(e)} 

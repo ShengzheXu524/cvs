@@ -70,7 +70,7 @@ def test_direct_api_request(api_key):
     # 非常简单的请求体
     payload = {
         "model": get_model("default"),  # 使用模型配置模块获取默认模型
-        "max_tokens": 50,
+        "max_tokens": 100,  # 使用较小的值，足够简单测试
         "messages": [
             {"role": "user", "content": "Hello! Please respond with 'API key is working' and nothing else."}
         ]
