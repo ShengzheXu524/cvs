@@ -17,6 +17,7 @@ from src.openrouter_handler import OpenRouterHandler
 from src.data_organizer import DataOrganizer
 from src.csv_generator import CSVGenerator
 from src.sentence_splitter import split_sentences
+from src.docx_reader import DocxReader
 
 # 配置日志
 logger = logging.getLogger("data_processor")
@@ -48,6 +49,9 @@ class DataProcessor:
         
         # 初始化CSV生成器
         self.csv_generator = CSVGenerator()
+        
+        # 初始化docx读取器
+        self.docx_reader = DocxReader()
     
     def process_document(self, document_path, output_dir="test_results", save_debug=False):
         """
@@ -70,9 +74,30 @@ class DataProcessor:
             os.makedirs(os.path.join(output_dir, "debug"), exist_ok=True)
             os.makedirs(os.path.join(output_dir, "analysis"), exist_ok=True)
             
+            # 检查文件类型
+            file_extension = Path(document_path).suffix.lower()
+            
             # 读取文档内容
-            with open(document_path, 'r', encoding='utf-8') as f:
-                document_text = f.read()
+            if file_extension == '.docx':
+                logger.info("检测到Word文档，使用DocxReader读取内容")
+                document_text = self.docx_reader.read_file(document_path)
+                
+                # 如果需要调试，保存提取的文本
+                if save_debug:
+                    extracted_text_path = os.path.join(output_dir, "debug", f"{Path(document_path).stem}_extracted.txt")
+                    with open(extracted_text_path, 'w', encoding='utf-8') as f:
+                        f.write(document_text)
+                    logger.info(f"提取的文本已保存到: {extracted_text_path}")
+                
+                # 尝试从文档结构中提取元数据
+                structure = self.docx_reader.read_file_with_structure(document_path)
+                if structure and "metadata" in structure:
+                    metadata = structure["metadata"]
+                    logger.info(f"从文档中提取的元数据: {metadata}")
+            else:
+                logger.info("检测到文本文件，直接读取内容")
+                with open(document_path, 'r', encoding='utf-8') as f:
+                    document_text = f.read()
             
             # 提取数据
             extract_start_time = time.time()
@@ -136,35 +161,54 @@ class DataProcessor:
             logger.error(f"处理文档时出错: {str(e)}", exc_info=True)
             return False, None, time.time() - start_time
     
-    def batch_process(self, input_dir, output_dir="test_results", file_pattern="*.txt", save_debug=False):
+    def batch_process(self, input_dir, output_dir="test_results", file_pattern="*.txt;*.docx", save_debug=False):
         """
         批量处理目录下的文档
         
         Args:
             input_dir: 输入目录
             output_dir: 输出目录
-            file_pattern: 文件匹配模式
+            file_pattern: 文件匹配模式，多个模式用分号分隔
             save_debug: 是否保存调试信息
         
         Returns:
             list: 处理结果列表，每个元素为(文件名, 是否成功, CSV路径, 处理时间)
         """
         import glob
+        import re
         
         logger.info(f"开始批量处理目录: {input_dir}")
         
-        # 获取匹配的文件列表
-        file_paths = glob.glob(os.path.join(input_dir, file_pattern))
-        logger.info(f"找到 {len(file_paths)} 个匹配的文件")
+        # 拆分文件模式
+        patterns = file_pattern.split(';')
+        
+        # 获取所有匹配的文件
+        all_files = []
+        for pattern in patterns:
+            pattern = pattern.strip()
+            if pattern:
+                matched_files = glob.glob(os.path.join(input_dir, pattern))
+                all_files.extend(matched_files)
+        
+        # 去重并排序
+        all_files = sorted(set(all_files))
+        logger.info(f"找到 {len(all_files)} 个匹配的文件")
         
         results = []
-        for file_path in file_paths:
+        for file_path in all_files:
             file_name = os.path.basename(file_path)
             logger.info(f"处理文件: {file_name}")
             
+            # 尝试从文件名提取年份
+            year_match = re.search(r'(\d{4})', file_name)
+            year = year_match.group(1) if year_match else "unknown"
+            
+            # 设置输出目录
+            file_output_dir = os.path.join(output_dir, year)
+            
             success, csv_path, process_time = self.process_document(
                 document_path=file_path,
-                output_dir=output_dir,
+                output_dir=file_output_dir,
                 save_debug=save_debug
             )
             

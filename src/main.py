@@ -14,6 +14,8 @@ import argparse
 import time
 from datetime import datetime
 from dotenv import load_dotenv
+from pathlib import Path
+import re
 
 # 导入自定义模块
 from src.openrouter_handler import OpenRouterHandler
@@ -22,6 +24,7 @@ from src.model_config import get_model
 from src.data_organizer import DataOrganizer
 from src.csv_generator import CSVGenerator
 from src.sentence_splitter import split_sentences
+from src.docx_reader import DocxReader
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, 
@@ -55,15 +58,43 @@ def process_file(input_file, model_name=None, output_dir="test_results", save_de
     start_time = time.time()
     
     try:
+        # 检查文件扩展名
+        file_extension = Path(input_file).suffix.lower()
+        
         # 确保输出目录存在
         os.makedirs(output_dir, exist_ok=True)
         os.makedirs(os.path.join(output_dir, "analysis"), exist_ok=True)
         if save_debug:
             os.makedirs(os.path.join(output_dir, "debug"), exist_ok=True)
         
-        # 读取文档内容
-        with open(input_file, 'r', encoding='utf-8') as f:
-            document_text = f.read()
+        # 根据文件类型读取内容
+        if file_extension == '.docx':
+            logger.info("检测到Word文档，使用DocxReader读取")
+            docx_reader = DocxReader()
+            document_text = docx_reader.read_file(input_file)
+            
+            # 如果需要调试，保存提取的文本
+            if save_debug:
+                # 提取年份作为目录名（从文件名中提取）
+                file_name = os.path.basename(input_file)
+                year_match = re.search(r'(\d{4})', file_name)
+                year = year_match.group(1) if year_match else "unknown"
+                
+                # 确保年份目录存在
+                year_dir = os.path.join(output_dir, year)
+                os.makedirs(year_dir, exist_ok=True)
+                os.makedirs(os.path.join(year_dir, "debug"), exist_ok=True)
+                
+                # 保存提取的文本
+                extracted_text_path = os.path.join(year_dir, "debug", f"{os.path.splitext(file_name)[0]}_extracted.txt")
+                with open(extracted_text_path, 'w', encoding='utf-8') as f:
+                    f.write(document_text)
+                logger.info(f"提取的文本已保存到: {extracted_text_path}")
+        else:
+            # 默认当作文本文件处理
+            logger.info("文本文件，直接读取内容")
+            with open(input_file, 'r', encoding='utf-8') as f:
+                document_text = f.read()
         
         # 初始化API处理器
         api_handler = OpenRouterHandler(model=model_name)
@@ -81,7 +112,22 @@ def process_file(input_file, model_name=None, output_dir="test_results", save_de
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         base_name = os.path.splitext(os.path.basename(input_file))[0]
         safe_model_name = api_handler.model.replace('/', '_')
-        output_json = os.path.join(output_dir, "analysis", f"{base_name}_{safe_model_name}_{timestamp}.json")
+        
+        # 提取年份作为目录名
+        year_match = re.search(r'(\d{4})', base_name)
+        year = year_match.group(1) if year_match else None
+        if year:
+            # 使用年份作为子目录
+            year_dir = os.path.join(output_dir, year)
+            os.makedirs(year_dir, exist_ok=True)
+            os.makedirs(os.path.join(year_dir, "analysis"), exist_ok=True)
+            if save_debug:
+                os.makedirs(os.path.join(year_dir, "debug"), exist_ok=True)
+            output_json = os.path.join(year_dir, "analysis", f"{base_name}_{safe_model_name}_{timestamp}.json")
+        else:
+            # 没有年份时使用原目录
+            output_json = os.path.join(output_dir, "analysis", f"{base_name}_{safe_model_name}_{timestamp}.json")
+        
         with open(output_json, 'w', encoding='utf-8') as f:
             json.dump({
                 "model": api_handler.model,
@@ -122,16 +168,22 @@ def process_file(input_file, model_name=None, output_dir="test_results", save_de
                 processed_data = data_organizer.apply_sentence_splitter(complete_data, split_sentences)
                 
                 # 保存组织后的数据
-                organized_json = os.path.join(output_dir, "analysis", f"organized_data_{timestamp}.json")
+                if year:
+                    organized_json = os.path.join(year_dir, "analysis", f"organized_data_{timestamp}.json")
+                    csv_dir = year_dir
+                else:
+                    organized_json = os.path.join(output_dir, "analysis", f"organized_data_{timestamp}.json")
+                    csv_dir = output_dir
+                
                 with open(organized_json, 'w', encoding='utf-8') as f:
                     json.dump(processed_data, f, ensure_ascii=False, indent=2)
                 logger.info(f"组织后的数据已保存到: {organized_json}")
                 
                 # 确定CSV文件名
-                year = result.get("metadata", {}).get("year", "未知年份")
+                year_from_result = result.get("metadata", {}).get("year", year if year else "未知年份")
                 exam_type = result.get("metadata", {}).get("exam_type", "未知类型")
-                csv_filename = f"{year}{exam_type}.csv"
-                csv_path = os.path.join(output_dir, csv_filename)
+                csv_filename = f"{year_from_result}{exam_type}.csv"
+                csv_path = os.path.join(csv_dir, csv_filename)
                 
                 # 生成CSV文件
                 csv_success = csv_generator.generate_csv(processed_data, csv_path)
@@ -170,25 +222,28 @@ def process_file(input_file, model_name=None, output_dir="test_results", save_de
 def main():
     """主函数"""
     parser = argparse.ArgumentParser(description="考研英语真题文档处理工具")
-    parser.add_argument('input_file', help="输入文件路径")
+    parser.add_argument('input_file', help="输入文件路径，支持txt和docx格式")
     parser.add_argument('--model', help="使用的模型名称，留空则使用环境变量中DEFAULT_MODEL指定的模型")
-    parser.add_argument('--output-dir', default="test_results", help="输出目录")
+    parser.add_argument('--output-dir', default="test_results", help="输出目录，会自动根据年份创建子目录")
     parser.add_argument('--debug', action='store_true', help="保存调试信息，包括API响应和中间结果")
     parser.add_argument('--no-csv', action='store_true', help="不生成CSV文件，仅生成JSON结果")
+    parser.add_argument('--year', help="指定年份，用于创建输出子目录，默认从文件名中提取")
     
     # 添加帮助文本
     parser.epilog = """
 详细说明:
-  本工具会自动检测文档长度并选择合适的处理方式:
-  - 对于超过3000字符的长文档，自动使用分段处理，提高API调用效率
-  - 对于较短文档，尝试一次性提取，若不完整再使用分段处理
+  本工具支持处理txt和docx格式的考研英语真题，会自动根据文件扩展名选择处理方式:
+  - 对于docx文件，会自动提取文本并处理
+  - 对于txt文件，直接读取内容处理
+  - 结果会根据年份自动保存在对应的子目录中
+  - 超过3000字符的长文档会自动使用分段处理，提高API调用效率
   - 使用--debug参数可以保存API响应和中间处理结果，便于分析和调试
   - 默认会同时生成JSON和CSV格式的结果文件，使用--no-csv可以禁用CSV生成
   
 示例:
   python src/main.py input.txt --model google/gemini-2.5-flash-preview --debug
-  python src/main.py long_document.txt --output-dir custom_results
-  python src/main.py input.txt --no-csv  # 不生成CSV文件
+  python src/main.py 2023年考研英语真题.docx --output-dir custom_results
+  python src/main.py input.txt --year 2022 --no-csv  # 手动指定年份，不生成CSV文件
 """
     
     args = parser.parse_args()
@@ -198,11 +253,16 @@ def main():
         logger.error(f"文件不存在: {args.input_file}")
         return 1
     
+    # 如果用户指定了年份，修改输出目录
+    output_dir = args.output_dir
+    if args.year:
+        output_dir = os.path.join(args.output_dir, args.year)
+    
     # 处理文件
     result = process_file(
         args.input_file, 
         model_name=args.model, 
-        output_dir=args.output_dir,
+        output_dir=output_dir,
         save_debug=args.debug,
         gen_csv=not args.no_csv
     )
