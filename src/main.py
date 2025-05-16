@@ -2,233 +2,221 @@
 # -*- coding: utf-8 -*-
 
 """
-主程序入口，用于处理考研英语真题docx文件。
+考研英语真题文档处理主程序
+负责流程编排与控制
 """
 
 import os
 import sys
-import argparse
+import json
 import logging
-import traceback
-from pathlib import Path
-from tqdm import tqdm
+import argparse
+import time
+from datetime import datetime
+from dotenv import load_dotenv
 
-# 添加父目录到sys.path，确保可以导入src目录下的模块
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# 导入项目模块
-from src.claude_api import ClaudeAPI
-from src.docx_reader import DocxReader
+# 导入自定义模块
+from src.openrouter_handler import OpenRouterHandler
+from src.content_analyzer import ContentAnalyzer
+from src.model_config import get_model
 from src.data_organizer import DataOrganizer
 from src.csv_generator import CSVGenerator
-from src.utils import setup_logging, load_api_key, ensure_directory_exists, get_all_docx_files, extract_exam_info_from_filename, make_output_path
 from src.sentence_splitter import split_sentences
 
-def process_single_file(input_file, output_file, api_key=None, model=None, debug=False):
+# 配置日志
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("main")
+
+# 加载环境变量
+load_dotenv()
+
+def process_file(input_file, model_name=None, output_dir="test_results", save_debug=False, gen_csv=True):
     """
-    处理单个docx文件。
+    处理指定的文档文件
     
     Args:
-        input_file (str): 输入docx文件路径
-        output_file (str): 输出CSV文件路径
-        api_key (str, optional): Claude API密钥
-        model (str, optional): 要使用的Claude模型
-        debug (bool, optional): 是否启用调试模式
+        input_file: 输入文件路径
+        model_name: 模型名称，如果为None则使用环境变量或默认模型
+        output_dir: 输出目录
+        save_debug: 是否保存调试信息
+        gen_csv: 是否生成CSV文件
     
     Returns:
-        bool: 是否成功处理
+        dict: 包含处理结果的字典，包括:
+            - success: 处理是否成功
+            - json_path: 保存的JSON结果路径
+            - csv_path: 保存的CSV结果路径(如果生成了)
+            - analysis_time: 分析耗时
     """
-    logger = logging.getLogger("考研英语真题处理")
     logger.info(f"开始处理文件: {input_file}")
     
+    # 记录开始时间
+    start_time = time.time()
+    
     try:
-        # 提取年份和考试类型
-        year, exam_type = extract_exam_info_from_filename(input_file)
-        logger.info(f"从文件名提取到信息 - 年份: {year}, 类型: {exam_type}")
+        # 确保输出目录存在
+        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(os.path.join(output_dir, "analysis"), exist_ok=True)
+        if save_debug:
+            os.makedirs(os.path.join(output_dir, "debug"), exist_ok=True)
         
-        # 创建各模块实例
-        docx_reader = DocxReader()
+        # 读取文档内容
+        with open(input_file, 'r', encoding='utf-8') as f:
+            document_text = f.read()
         
-        # 简化API客户端初始化，使用简单直接的方式
-        # 避免使用复杂的参数或配置，可能导致兼容性问题
-        claude_api = ClaudeAPI(api_key=api_key, model=model if model else "claude-3-5-haiku-20241022")
+        # 初始化API处理器
+        api_handler = OpenRouterHandler(model=model_name)
         
-        data_organizer = DataOrganizer()
-        csv_generator = CSVGenerator()
+        # 初始化内容分析器
+        content_analyzer = ContentAnalyzer(api_handler=api_handler)
         
-        # 读取docx文件
-        logger.info("读取文档内容...")
-        document_text = docx_reader.read_file(input_file)
+        # 提取数据
+        extract_start_time = time.time()
+        result = content_analyzer.extract_data(document_text, save_debug=save_debug, output_dir=output_dir)
+        extract_time = time.time() - extract_start_time
+        logger.info(f"数据提取耗时: {extract_time:.2f} 秒")
         
-        # 发送到Claude API进行分析
-        logger.info("发送到Claude API进行内容分析...")
-        api_result = claude_api.extract_structured_data(document_text)
+        # 保存结果到JSON文件
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_name = os.path.splitext(os.path.basename(input_file))[0]
+        safe_model_name = api_handler.model.replace('/', '_')
+        output_json = os.path.join(output_dir, "analysis", f"{base_name}_{safe_model_name}_{timestamp}.json")
+        with open(output_json, 'w', encoding='utf-8') as f:
+            json.dump({
+                "model": api_handler.model,
+                "input_file": os.path.basename(input_file),
+                "analysis_time_seconds": extract_time,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "result": result
+            }, f, ensure_ascii=False, indent=2)
         
-        # 保存原始API结果（调试用）
-        if debug:
-            debug_dir = os.path.join(os.path.dirname(output_file), "debug")
-            ensure_directory_exists(debug_dir)
-            debug_file = os.path.join(debug_dir, f"{os.path.basename(input_file)}.json")
-            data_organizer.save_debug_data(api_result, debug_file)
-            
-            # 如果返回了原始响应文本，则同时保存原始响应
-            if isinstance(api_result, dict) and "raw_response" in api_result:
-                raw_response_file = os.path.join(debug_dir, f"{os.path.basename(input_file)}_raw.txt")
-                with open(raw_response_file, "w", encoding="utf-8") as f:
-                    f.write(api_result.get("raw_response", ""))
+        logger.info(f"JSON结果已保存到: {output_json}")
         
-        # 组织和规范化数据
-        logger.info("组织和规范化数据...")
-        organized_data = data_organizer.organize_data(api_result, year, exam_type)
-        
-        # 确保数据完整性
-        logger.info("确保数据完整...")
-        complete_data = data_organizer.ensure_complete_dataset(organized_data, year, exam_type)
-        
-        # 验证数据
-        is_valid, message = data_organizer.validate_data(complete_data)
-        if not is_valid:
-            logger.warning(f"数据验证失败: {message}")
-            logger.warning("尝试继续处理...")
-        
-        # 应用句子拆分器
-        logger.info("应用句子拆分器...")
-        data_with_split_sentences = data_organizer.apply_sentence_splitter(complete_data, split_sentences)
-        
-        # 生成CSV文件
-        logger.info(f"生成CSV文件: {output_file}")
-        success = csv_generator.generate_csv(data_with_split_sentences, output_file)
-        
-        if success:
-            logger.info(f"成功处理文件: {input_file}")
-            return True
+        # 检查是否完整提取了52道题
+        questions = result.get("questions", [])
+        if len(questions) < 52:
+            logger.warning(f"警告：只提取了 {len(questions)} 道题目，不是完整的52道题")
+            logger.info(f"题号列表: {sorted([q.get('number', 0) for q in questions])}")
         else:
-            logger.error(f"处理文件失败: {input_file}")
-            return False
-            
+            logger.info(f"成功提取了所有 {len(questions)} 道题目")
+        
+        # 如果需要生成CSV
+        csv_path = None
+        if gen_csv:
+            try:
+                logger.info("开始生成CSV文件...")
+                csv_start_time = time.time()
+                
+                # 初始化数据组织器和CSV生成器
+                data_organizer = DataOrganizer()
+                csv_generator = CSVGenerator()
+                
+                # 组织数据
+                organized_data = data_organizer.organize_data(result)
+                
+                # 确保数据集完整
+                complete_data = data_organizer.ensure_complete_dataset(organized_data)
+                
+                # 应用句子拆分
+                processed_data = data_organizer.apply_sentence_splitter(complete_data, split_sentences)
+                
+                # 保存组织后的数据
+                organized_json = os.path.join(output_dir, "analysis", f"organized_data_{timestamp}.json")
+                with open(organized_json, 'w', encoding='utf-8') as f:
+                    json.dump(processed_data, f, ensure_ascii=False, indent=2)
+                logger.info(f"组织后的数据已保存到: {organized_json}")
+                
+                # 确定CSV文件名
+                year = result.get("metadata", {}).get("year", "未知年份")
+                exam_type = result.get("metadata", {}).get("exam_type", "未知类型")
+                csv_filename = f"{year}{exam_type}.csv"
+                csv_path = os.path.join(output_dir, csv_filename)
+                
+                # 生成CSV文件
+                csv_success = csv_generator.generate_csv(processed_data, csv_path)
+                csv_time = time.time() - csv_start_time
+                
+                if csv_success:
+                    logger.info(f"CSV文件已成功生成: {csv_path}，耗时: {csv_time:.2f} 秒")
+                else:
+                    logger.error(f"CSV文件生成失败，耗时: {csv_time:.2f} 秒")
+                    csv_path = None
+                
+            except Exception as e:
+                logger.error(f"生成CSV文件时出错: {str(e)}", exc_info=True)
+                csv_path = None
+        
+        # 计算总处理时间
+        total_time = time.time() - start_time
+        logger.info(f"文件处理完成，总耗时: {total_time:.2f} 秒")
+        
+        return {
+            "success": True,
+            "json_path": output_json,
+            "csv_path": csv_path,
+            "analysis_time": total_time
+        }
+        
     except Exception as e:
-        logger.error(f"处理文件时出错: {str(e)}")
-        logger.debug(traceback.format_exc())
-        return False
-
-def process_batch(input_dir, output_dir, api_key=None, model=None, debug=False):
-    """
-    批处理目录中的所有docx文件。
-    
-    Args:
-        input_dir (str): 输入目录
-        output_dir (str): 输出目录
-        api_key (str, optional): Claude API密钥
-        model (str, optional): 要使用的Claude模型
-        debug (bool, optional): 是否启用调试模式
-    
-    Returns:
-        tuple: (成功数, 失败数)
-    """
-    logger = logging.getLogger("考研英语真题处理")
-    logger.info(f"开始批处理目录: {input_dir}")
-    
-    # 获取所有docx文件
-    docx_files = get_all_docx_files(input_dir)
-    logger.info(f"找到 {len(docx_files)} 个docx文件")
-    
-    if not docx_files:
-        logger.warning(f"目录中没有找到docx文件: {input_dir}")
-        return 0, 0
-    
-    # 确保输出目录存在
-    ensure_directory_exists(output_dir)
-    
-    # 处理每个文件
-    success_count = 0
-    failure_count = 0
-    
-    for file_path in tqdm(docx_files, desc="处理文件"):
-        # 创建输出文件路径
-        output_file = make_output_path(file_path, output_dir)
-        
-        # 处理文件
-        if process_single_file(file_path, output_file, api_key, model, debug):
-            success_count += 1
-        else:
-            failure_count += 1
-    
-    logger.info(f"批处理完成 - 成功: {success_count}, 失败: {failure_count}")
-    return success_count, failure_count
+        logger.error(f"处理文件时出错: {str(e)}", exc_info=True)
+        return {
+            "success": False,
+            "json_path": None,
+            "csv_path": None,
+            "analysis_time": time.time() - start_time
+        }
 
 def main():
-    """程序主入口。"""
-    # 解析命令行参数
-    parser = argparse.ArgumentParser(description="处理考研英语真题docx文件，提取结构化信息并生成CSV文件。")
+    """主函数"""
+    parser = argparse.ArgumentParser(description="考研英语真题文档处理工具")
+    parser.add_argument('input_file', help="输入文件路径")
+    parser.add_argument('--model', help="使用的模型名称，留空则使用环境变量中DEFAULT_MODEL指定的模型")
+    parser.add_argument('--output-dir', default="test_results", help="输出目录")
+    parser.add_argument('--debug', action='store_true', help="保存调试信息，包括API响应和中间结果")
+    parser.add_argument('--no-csv', action='store_true', help="不生成CSV文件，仅生成JSON结果")
     
-    parser.add_argument("--input", required=True, help="输入的docx文件路径或目录")
-    parser.add_argument("--output", required=True, help="输出的CSV文件路径或目录")
-    parser.add_argument("--api_key", help="Claude API密钥（如不提供将尝试从环境变量获取）")
-    parser.add_argument("--model", default="claude-3-5-haiku-20241022", help="要使用的Claude模型")
-    parser.add_argument("--batch", action="store_true", help="批处理模式，处理目录下所有docx文件")
-    parser.add_argument("--log", choices=["debug", "info", "warning", "error"], default="info", help="日志级别")
-    parser.add_argument("--debug", action="store_true", help="调试模式，保存中间结果")
+    # 添加帮助文本
+    parser.epilog = """
+详细说明:
+  本工具会自动检测文档长度并选择合适的处理方式:
+  - 对于超过3000字符的长文档，自动使用分段处理，提高API调用效率
+  - 对于较短文档，尝试一次性提取，若不完整再使用分段处理
+  - 使用--debug参数可以保存API响应和中间处理结果，便于分析和调试
+  - 默认会同时生成JSON和CSV格式的结果文件，使用--no-csv可以禁用CSV生成
+  
+示例:
+  python src/main.py input.txt --model google/gemini-2.5-flash-preview --debug
+  python src/main.py long_document.txt --output-dir custom_results
+  python src/main.py input.txt --no-csv  # 不生成CSV文件
+"""
     
     args = parser.parse_args()
     
-    # 设置日志
-    logger = setup_logging(args.log)
-    logger.info("开始执行考研英语真题处理程序")
+    # 检查文件是否存在
+    if not os.path.exists(args.input_file):
+        logger.error(f"文件不存在: {args.input_file}")
+        return 1
     
-    # 获取API密钥
-    api_key = args.api_key
-    if not api_key:
-        try:
-            api_key = load_api_key()
-        except ValueError as e:
-            logger.error(str(e))
-            return 1
+    # 处理文件
+    result = process_file(
+        args.input_file, 
+        model_name=args.model, 
+        output_dir=args.output_dir,
+        save_debug=args.debug,
+        gen_csv=not args.no_csv
+    )
     
-    # 执行处理
-    try:
-        if args.batch or os.path.isdir(args.input):
-            # 批处理模式
-            input_dir = args.input
-            output_dir = args.output
-            
-            if not os.path.isdir(input_dir):
-                logger.error(f"输入路径不是有效目录: {input_dir}")
-                return 1
-            
-            success_count, failure_count = process_batch(
-                input_dir, output_dir, api_key, args.model, args.debug
-            )
-            
-            if failure_count > 0:
-                logger.warning(f"部分文件处理失败 - 成功: {success_count}, 失败: {failure_count}")
-                return 1 if success_count == 0 else 0
-        else:
-            # 单文件模式
-            input_file = args.input
-            output_file = args.output
-            
-            if not os.path.isfile(input_file):
-                logger.error(f"输入文件不存在: {input_file}")
-                return 1
-            
-            if not input_file.endswith('.docx'):
-                logger.error(f"输入文件不是docx格式: {input_file}")
-                return 1
-            
-            success = process_single_file(
-                input_file, output_file, api_key, args.model, args.debug
-            )
-            
-            if not success:
-                logger.error("处理失败")
-                return 1
-        
-        logger.info("程序执行完毕")
+    # 输出处理结果摘要
+    if result["success"]:
+        logger.info("✅ 文件处理成功")
+        logger.info(f"📊 JSON结果: {result['json_path']}")
+        if result["csv_path"]:
+            logger.info(f"📝 CSV结果: {result['csv_path']}")
+        logger.info(f"⏱️ 总耗时: {result['analysis_time']:.2f} 秒")
         return 0
-        
-    except Exception as e:
-        logger.error(f"程序执行出错: {str(e)}")
-        logger.debug(traceback.format_exc())
+    else:
+        logger.error("❌ 文件处理失败")
         return 1
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Claude API调用模块，负责构建请求并调用Claude 3.7 API。
+OpenRouter API调用模块，负责构建请求并调用OpenRouter API。
 """
 
 import os
@@ -12,30 +12,38 @@ import time
 import requests
 from .model_config import get_model, get_model_max_tokens
 
-logger = logging.getLogger("考研英语真题处理.claude_api")
+logger = logging.getLogger("考研英语真题处理.openrouter_api")
 
-class ClaudeAPI:
+# 从外部引入API URL，不再硬编码
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_MODELS_API_URL = "https://openrouter.ai/api/v1/models"
+
+class OpenRouterAPI:
     """
-    Claude API调用器，用于发送请求到Claude 3.7 API。
+    OpenRouter API调用器，用于发送请求到OpenRouter API。
     """
     
-    def __init__(self, api_key=None, model=None):
+    def __init__(self, api_key=None, model=None, site_url=None, site_name=None, api_url=None, models_api_url=None):
         """
-        初始化Claude API调用器。
+        初始化OpenRouter API调用器。
         
         Args:
-            api_key (str, optional): Claude API密钥
-            model (str, optional): 使用的Claude模型名称或模型类型标识符
-                可以是具体模型名称，如"claude-3-7-sonnet-20250219"
+            api_key (str, optional): OpenRouter API密钥
+            model (str, optional): 使用的模型名称或模型类型标识符
+                可以是具体模型名称，如"openai/gpt-4o"
                 也可以是类型标识符，如"default", "fastest", "balanced", "most_capable"
+            site_url (str, optional): 你的网站URL，用于OpenRouter排名
+            site_name (str, optional): 你的网站名称，用于OpenRouter排名
+            api_url (str, optional): OpenRouter API URL，默认使用全局常量
+            models_api_url (str, optional): OpenRouter模型列表API URL，默认使用全局常量
         """
         self.api_key = api_key
         if not self.api_key:
             # 尝试从环境变量获取API密钥
-            self.api_key = os.getenv("CLAUDE_API_KEY")
+            self.api_key = os.getenv("OPENROUTER_API_KEY")
             
         if not self.api_key:
-            raise ValueError("未提供API密钥，请设置环境变量CLAUDE_API_KEY或在初始化时提供api_key参数")
+            raise ValueError("未提供API密钥，请设置环境变量OPENROUTER_API_KEY或在初始化时提供api_key参数")
         
         # 使用模型配置模块获取模型名称
         self.model = get_model(model)
@@ -43,17 +51,27 @@ class ClaudeAPI:
         self.max_tokens = get_model_max_tokens(self.model)
         logger.info(f"使用模型: {self.model}, 最大token: {self.max_tokens}")
         
+        # 网站信息（用于OpenRouter排名）
+        self.site_url = site_url
+        self.site_name = site_name
+        
         # API端点和请求头
-        self.api_endpoint = "https://api.anthropic.com/v1/messages"
+        self.api_endpoint = api_url or OPENROUTER_API_URL
+        self.models_api_endpoint = models_api_url or OPENROUTER_MODELS_API_URL
         self.headers = {
-            "x-api-key": self.api_key,
-            "content-type": "application/json",
-            "anthropic-version": "2023-06-01"
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
         }
+        
+        # 如果提供了网站信息，添加到请求头
+        if self.site_url:
+            self.headers["HTTP-Referer"] = self.site_url
+        if self.site_name:
+            self.headers["X-Title"] = self.site_name
     
-    def _make_api_request(self, messages, max_tokens=None, temperature=0.0, max_retries=3, retry_delay=5):
+    def _make_api_request(self, messages, max_tokens=None, temperature=0.0, max_retries=3, retry_delay=5, routes_params=None, **extra_params):
         """
-        发送API请求到Claude，使用直接的HTTP请求而不是anthropic库。
+        发送API请求到OpenRouter。
         
         Args:
             messages (list): 消息列表
@@ -61,6 +79,8 @@ class ClaudeAPI:
             temperature (float): 温度参数，控制生成的随机性
             max_retries (int): 最大重试次数
             retry_delay (int): 重试间隔（秒）
+            routes_params (dict, optional): 路由参数，用于处理数据隐私策略
+            **extra_params: 额外的API参数，如top_p、frequency_penalty等
             
         Returns:
             dict: API响应结果
@@ -69,12 +89,23 @@ class ClaudeAPI:
         if max_tokens is None or max_tokens > self.max_tokens:
             max_tokens = self.max_tokens
             
+        # 构建请求载荷
         payload = {
             "model": self.model,
             "max_tokens": max_tokens,
             "temperature": temperature,
             "messages": messages
         }
+        
+        # 添加额外参数
+        if extra_params:
+            payload.update(extra_params)
+        
+        # 添加路由参数（如果提供）
+        if routes_params:
+            # OpenRouter要求routes_params在顶层，不是子字段
+            for key, value in routes_params.items():
+                payload[key] = value
         
         for attempt in range(max_retries):
             try:
@@ -152,14 +183,17 @@ class ClaudeAPI:
         # 如果没有找到明确的JSON标记，返回原始文本
         return text
     
-    def analyze_document(self, document_text, max_retries=3, retry_delay=5):
+    def analyze_document(self, document_text, max_retries=3, retry_delay=5, temperature=0.0, routes_params=None, **extra_params):
         """
-        使用Claude分析文档内容。
+        使用OpenRouter分析文档内容。
         
         Args:
             document_text (str): 文档文本内容
             max_retries (int, optional): 最大重试次数
             retry_delay (int, optional): 重试延迟时间（秒）
+            temperature (float, optional): 温度参数，控制生成的随机性
+            routes_params (dict, optional): 路由参数，用于处理数据隐私策略
+            **extra_params: 额外的API参数
         
         Returns:
             dict: 分析结果
@@ -172,20 +206,27 @@ class ClaudeAPI:
         ]
         
         try:
+            # 设置合适的默认路由参数，确保能访问更多模型，但允许被传入的参数覆盖
+            default_routes = {"allow_training": "true", "allow_logging": "true"}
+            if routes_params:
+                default_routes.update(routes_params)
+            
             # 发送API请求，不指定max_tokens，让模型自行决定返回长度
             result = self._make_api_request(
                 messages=messages,
-                temperature=0.0,
+                temperature=temperature,
                 max_retries=max_retries,
-                retry_delay=retry_delay
+                retry_delay=retry_delay,
+                routes_params=default_routes,
+                **extra_params
             )
             
             if "error" in result:
                 logger.error("分析文档失败")
                 return result
             
-            # 提取响应内容
-            content = result.get("content", [{}])[0].get("text", "")
+            # 提取响应内容 - OpenRouter使用OpenAI格式的响应
+            content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
             
             # 尝试从文本中提取JSON
             try:
@@ -199,7 +240,7 @@ class ClaudeAPI:
             logger.exception(f"分析文档时出错: {str(e)}")
             return {"error": str(e)}
     
-    def extract_structured_data(self, document_text, max_retries=3, retry_delay=5):
+    def extract_structured_data(self, document_text, max_retries=3, retry_delay=5, temperature=0.0, max_tokens=4000, routes_params=None, **extra_params):
         """
         使用更详细的提示词从文档中提取结构化数据。
         
@@ -207,6 +248,10 @@ class ClaudeAPI:
             document_text (str): 文档文本内容
             max_retries (int, optional): 最大重试次数
             retry_delay (int, optional): 重试延迟时间（秒）
+            temperature (float, optional): 温度参数，控制生成的随机性
+            max_tokens (int, optional): 最大生成的token数，默认为4000
+            routes_params (dict, optional): 路由参数，用于处理数据隐私策略
+            **extra_params: 额外的API参数
         
         Returns:
             dict: 提取的结构化数据
@@ -363,26 +408,34 @@ class ClaudeAPI:
 
         # 构建消息
         messages = [
-            {"role": "user", "content": f"{system_prompt}\n\n文档内容:\n{document_text}"}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": document_text}
         ]
         
         # 使用足够大的max_tokens值，确保返回完整内容
         logger.info("开始提取结构化数据...")
         try:
+            # 设置合适的默认路由参数，确保能访问更多模型，但允许被传入的参数覆盖
+            default_routes = {"allow_training": "true", "allow_logging": "true"}
+            if routes_params:
+                default_routes.update(routes_params)
+                
             result = self._make_api_request(
                 messages=messages,
-                # 使用模型配置的最大值，会被_make_api_request自动处理为合适的值
-                temperature=0.0,
+                max_tokens=max_tokens,  # 给予足够的令牌数来生成完整响应
+                temperature=temperature,  # 使用温度参数控制随机性
                 max_retries=max_retries,
-                retry_delay=retry_delay
+                retry_delay=retry_delay,
+                routes_params=default_routes,
+                **extra_params
             )
             
             if "error" in result:
                 logger.error("提取结构化数据失败")
                 return result
             
-            # 提取响应内容
-            content = result.get("content", [{}])[0].get("text", "")
+            # 提取响应内容 - OpenRouter使用OpenAI格式的响应
+            content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
             
             # 尝试从文本中提取JSON
             try:
@@ -394,4 +447,27 @@ class ClaudeAPI:
         
         except Exception as e:
             logger.exception(f"提取结构化数据时出错: {str(e)}")
+            return {"error": str(e)}
+            
+    def get_available_models(self):
+        """
+        获取OpenRouter可用模型列表。
+        
+        Returns:
+            dict: 包含可用模型的响应
+        """
+        try:
+            response = requests.get(
+                self.models_api_endpoint,
+                headers={"Authorization": f"Bearer {self.api_key}"}
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"获取模型列表失败，状态码: {response.status_code}")
+                return {"error": response.json()}
+                
+        except Exception as e:
+            logger.exception(f"获取模型列表时出错: {str(e)}")
             return {"error": str(e)} 

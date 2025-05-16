@@ -1,0 +1,124 @@
+{
+  "questions": [
+    {
+      "number": 26,
+      "section_type": "Reading Comprehension",
+      "stem": "According to the first two paragraphs,alloparenting refers to the practice of",
+      "options": "[A]sharing  childcare  among  community  members.\n[B]assigning  babies  to  specific  adult  caregivers.\n[C]teaching  parenting  skills  to  older  children.\n[D]carrying  infants  around  by  their  parents.",
+      "correct_answer": "A",
+      "distractors": "[B]assigning  babies  to  specific  adult  caregivers.\n[C]teaching  parenting  skills  to  older  children.\n[D]carrying  infants  around  by  their  parents."
+    },
+    {
+      "number": 27,
+      "section_type": "Reading Comprehension",
+      "stem": "The scheme in Germany is mentioned to illustrate",
+      "options": "[A]an  attempt  to  facilitate  intergenerational  communication.\n[B]an  approach  to  integrating  alloparenting  into  western  society.\n[C]the  conventional  parenting  style  in  western  culture.\n[D]the differences between western and African ways of living.",
+      "correct_answer": "B",
+      "distractors": "[A]an  attempt  to  facilitate  intergenerational  communication.\n[C]the  conventional  parenting  style  in  western  culture.\n[D]the differences between western and African ways of living."
+    },
+    {
+      "number": 28,
+      "section_type": "Reading Comprehension",
+      "stem": "According  to  Paragraph  4,the“intensive  mothering  narrative”",
+      "options": "[A]alleviates   parenting   pressure.\n[B]consolidates   family   relationships.\n[C]results  in  the  child-centered  family.\n[D]departs  from  the  course  of  evolution.",
+      "correct_answer": "D",
+      "distractors": "[A]alleviates   parenting   pressure.\n[B]consolidates   family   relationships.\n[C]results  in  the  child-centered  family."
+    },
+    {
+      "number": 29,
+      "section_type": "Reading Comprehension",
+      "stem": "According to Paragraph 6,what can we learn about the nurseries in the UK?",
+      "options": "[A]They tend to  fall  short  of official requirements.\n[B]They  have  difficulty  finding  enough  caregivers.\n[C]They  ought to  improve  their  carer-to-child ratio.\n[D]They  should  try  to  prevent  parental  depression.",
+      "correct_answer": "C",
+      "distractors": "[A]They tend to  fall  short  of official requirements.\n[B]They  have  difficulty  finding  enough  caregivers.\n[D]They  should  try  to  prevent  parental  depression."
+    },
+    {
+      "number": 30,
+      "section_type": "Reading Comprehension",
+      "stem": "Which of the following would be the best title for the text?",
+      "options": "[A]Instructive  Teaching:A  Dilemma  for  Anxious  Parents\n[B]For  a  Happier  Family,Learn  from  the  Hunter-gatherers\n[C]Mixed-age  Playgroup,a  Better  Choice  for  Lonely  Children\n[D]Tracing  the  History  of  Parenting:from  Africa  to  Europe",
+      "correct_answer": "B",
+      "distractors": "[A]Instructive  Teaching:A  Dilemma  for  Anxious  Parents\n[C]Mixed-age  Playgroup,a  Better  Choice  for  Lonely  Children\n[D]Tracing  the  History  of  Parenting:from  Africa  to  Europe"
+    },
+    {
+      "number": 31,
+      "section_type": "Reading Comprehension",
+      "stem": "What can be learned about Rutkowski from the first two paragraphs?",
+      "options": "[A]He  is  enthusiastic  about  using  AI  models.\n[B]He is popular with the users of an AI art generator.\n[C]He  attracts  admiration  from  other  illustrators.\n[D]He  specializes  in  classical  painting  digitalization.",
+      "correct_answer": "B",
+      "distractors": "[A]He  is  enthusiastic  about  using  AI  models.\n[C]He  attracts  admiration  from  other  illustrators.\n[D]He  specializes  in  classical  painting  digitalization."
+    },
+    {
+      "number": 32,
+      "section_type": "Reading Comprehension",
+      "stem": "The problem with open-source AI art generators is that they",
+      "options": "[A]lack  flexibility  in  responding  to  prompts.\n[B]produce  artworks  in  unpredictable   styles.\n[C]make  unauthorized  use  of  online  images.\n[D]collect  user  information  without  consent.",
+      "correct_answer": "C",
+      "distractors": "[A]lack  flexibility  in  responding  to  prompts.\n[B]produce  artworks  in  unpredictable   styles.\n[D]collect  user  information  without  consent."
+    },
+    {
+      "number": 33,
+      "section_type": "Reading Comprehension",
+      "stem": "After  searching  online,Rutkowski  found",
+      "options": "[A]a  unique  way  to  reach  audiences.\n[B]a  new  method  to  identify  AI  images.\n[C]AI-generated  work  bearing  his  name.\n[D]heated  disputes  regarding  his  copyright.",
+      "correct_answer": "C",
+      "distractors": "[A]a  unique  way  to  reach  audiences.\n[B]a  new  method  to  identify  AI  images.\n[D]heated  disputes  regarding  his  copyright."
+    },
+    {
+      "number": 34,
+      "section_type": "Reading Comprehension",
+      "stem": "According to  Ortiz,AI  companies  are  advised  to",
+      "options": "[A]campaign  for  new  policies  or  regulation.\n[B]offer  their  services  to  public  institutions.\n[C]strengthen  their  relationships  with  AI  users.\n[D]adopt  a  different  strategy  for AI model training.",
+      "correct_answer": "D",
+      "distractors": "[A]campaign  for  new  policies  or  regulation.\n[B]offer  their  services  to  public  institutions.\n[C]strengthen  their  relationships  with  AI  users."
+    },
+    {
+      "number": 35,
+      "section_type": "Reading Comprehension",
+      "stem": "What is the text mainly  about?",
+      "options": "[A]Artists'responses  to  AI  art  generation.\n[B]AI's  expanded  role  in  artistic  creation.\n[C]Privacy  issues  in  the  application  of AI.\n[D]Opposing  views  on  AI  development.",
+      "correct_answer": "A",
+      "distractors": "[B]AI's  expanded  role  in  artistic  creation.\n[C]Privacy  issues  in  the  application  of AI.\n[D]Opposing  views  on  AI  development."
+    },
+    {
+      "number": 36,
+      "section_type": "Reading Comprehension",
+      "stem": "The Chesapeake Bay is described in Paragraph  1 as",
+      "options": "[A]a  valuable  natural  environment.\n[B]a  controversial  conservation  area.\n[C]a  place  with  commercial  potential.\n[D]a  headache  for  nearby  communities.",
+      "correct_answer": "A",
+      "distractors": "[B]a  controversial  conservation  area.\n[C]a  place  with  commercial  potential.\n[D]a  headache  for  nearby  communities."
+    },
+    {
+      "number": 37,
+      "section_type": "Reading Comprehension",
+      "stem": "The U.S.Supreme Court's ruling in the Idaho case",
+      "options": "[A]reinforces  water  pollution   control.\n[B]weakens  the  EPA's  regulatory  power.\n[C]will  end  conflicts  among  local  residents.\n[D]may  face  opposition  from  mining  operators.",
+      "correct_answer": "B",
+      "distractors": "[A]reinforces  water  pollution   control.\n[C]will  end  conflicts  among  local  residents.\n[D]may  face  opposition  from  mining  operators."
+    },
+    {
+      "number": 38,
+      "section_type": "Reading Comprehension",
+      "stem": "How does the author feel about future of the Chesapeake Bay?",
+      "options": "[A]Worried.\n[B]Puzzled.\n[C]Relieved.\n[D]Encouraged.",
+      "correct_answer": "A",
+      "distractors": "[B]Puzzled.\n[C]Relieved.\n[D]Encouraged."
+    },
+    {
+      "number": 39,
+      "section_type": "Reading Comprehension",
+      "stem": "What can be inferred about the EPA's involvement in the Chesapeake Bay Program?",
+      "options": "[A]It has restored the balance among neighboring jurisdictions.\n[B]It has triggered a radical reform in commercial fisheries.\n[C]It has set a fine example of respecting state authorities.\n[D]It has ensured the coordination of protection efforts.",
+      "correct_answer": "D",
+      "distractors": "[A]It has restored the balance among neighboring jurisdictions.\n[B]It has triggered a radical reform in commercial fisheries.\n[C]It has set a fine example of respecting state authorities."
+    },
+    {
+      "number": 40,
+      "section_type": "Reading Comprehension",
+      "stem": "The author holds that the state lawmakers should",
+      "options": "[A]be cautious about the influence of landowners.\n[B]attach due importance to wetlands protections.\n[C]recognize the need to expand wildlife refuges.\n[D]improve the wellbeing  of endangered  species.",
+      "correct_answer": "B",
+      "distractors": "[A]be cautious about the influence of landowners.\n[C]recognize the need to expand wildlife refuges.\n[D]improve the wellbeing  of endangered  species."
+    }
+  ]
+}

@@ -26,8 +26,8 @@ def main():
     
     parser.add_argument("--input_dir", required=True, help="输入目录，包含要处理的docx文件")
     parser.add_argument("--output_dir", required=True, help="输出目录，用于保存生成的CSV文件")
-    parser.add_argument("--api_key", help="Claude API密钥（如不提供将从环境变量获取）")
-    parser.add_argument("--model", default="claude-3-7-sonnet-20240229", help="要使用的Claude模型")
+    parser.add_argument("--api_key", help="OpenRouter API密钥（如不提供将从环境变量获取）")
+    parser.add_argument("--model", default="default", help="要使用的模型，如'default'或'deepseek/deepseek-r1:free'")
     parser.add_argument("--log", choices=["debug", "info", "warning", "error"], default="info", help="日志级别")
     parser.add_argument("--debug", action="store_true", help="启用调试模式")
     
@@ -41,9 +41,9 @@ def main():
     load_dotenv()
     
     # 获取API密钥
-    api_key = args.api_key or os.getenv("CLAUDE_API_KEY")
+    api_key = args.api_key or os.getenv("OPENROUTER_API_KEY")
     if not api_key:
-        logger.error("未提供Claude API密钥。请通过--api_key参数提供或设置CLAUDE_API_KEY环境变量。")
+        logger.error("未提供OpenRouter API密钥。请通过--api_key参数提供或设置OPENROUTER_API_KEY环境变量。")
         return 1
     
     # 确保输入目录存在

@@ -43,13 +43,13 @@ def load_api_key():
     从环境变量或.env文件加载API密钥。
     
     Returns:
-        str: Claude API密钥
+        str: OpenRouter API密钥
     """
     load_dotenv()
-    api_key = os.getenv("CLAUDE_API_KEY")
+    api_key = os.getenv("OPENROUTER_API_KEY")
     
     if not api_key:
-        raise ValueError("未找到Claude API密钥。请在.env文件中设置CLAUDE_API_KEY或通过参数提供。")
+        raise ValueError("未找到OpenRouter API密钥。请在.env文件中设置OPENROUTER_API_KEY或通过参数提供。")
     
     return api_key
 

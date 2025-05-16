@@ -1,0 +1,100 @@
+{
+  "questions": [
+    {
+      "number": 41,
+      "section_type": "Part B",
+      "stem": "Hannah",
+      "options": "[A]It is clear that the countries of origin have never been compensated for the stolen artifacts.\n[B]It is a flawed line of reasoning to argue against returning artifacts to their countries of origin.\n[C]Museum visitors can still learn as much from artifacts'copies after the originals are returned.\n[D]Reproductions,even  if  perfectly  made,cannot  take  the  place  of  the   authentic objects.\n[E]The real value of artifacts can only be recognized in their countries of origin rather than anywhere else.\n[F]Ways to get artifacts from other countries must bedecent and lawful.\n[G]Concern over security is no excuse for refusing to return artifacts to their countries of origin.",
+      "correct_answer": "E",
+      "distractors": "A,B,C,D,F,G"
+    },
+    {
+      "number": 42,
+      "section_type": "Part B",
+      "stem": "Buck",
+      "options": "[A]It is clear that the countries of origin have never been compensated for the stolen artifacts.\n[B]It is a flawed line of reasoning to argue against returning artifacts to their countries of origin.\n[C]Museum visitors can still learn as much from artifacts'copies after the originals are returned.\n[D]Reproductions,even  if  perfectly  made,cannot  take  the  place  of  the   authentic objects.\n[E]The real value of artifacts can only be recognized in their countries of origin rather than anywhere else.\n[F]Ways to get artifacts from other countries must bedecent and lawful.\n[G]Concern over security is no excuse for refusing to return artifacts to their countries of origin.",
+      "correct_answer": "C",
+      "distractors": "A,B,D,E,F,G"
+    },
+    {
+      "number": 43,
+      "section_type": "Part B",
+      "stem": "Sara",
+      "options": "[A]It is clear that the countries of origin have never been compensated for the stolen artifacts.\n[B]It is a flawed line of reasoning to argue against returning artifacts to their countries of origin.\n[C]Museum visitors can still learn as much from artifacts'copies after the originals are returned.\n[D]Reproductions,even  if  perfectly  made,cannot  take  the  place  of  the   authentic objects.\n[E]The real value of artifacts can only be recognized in their countries of origin rather than anywhere else.\n[F]Ways to get artifacts from other countries must bedecent and lawful.\n[G]Concern over security is no excuse for refusing to return artifacts to their countries of origin.",
+      "correct_answer": "F",
+      "distractors": "A,B,C,D,E,G"
+    },
+    {
+      "number": 44,
+      "section_type": "Part B",
+      "stem": "Victor",
+      "options": "[A]It is clear that the countries of origin have never been compensated for the stolen artifacts.\n[B]It is a flawed line of reasoning to argue against returning artifacts to their countries of origin.\n[C]Museum visitors can still learn as much from artifacts'copies after the originals are returned.\n[D]Reproductions,even  if  perfectly  made,cannot  take  the  place  of  the   authentic objects.\n[E]The real value of artifacts can only be recognized in their countries of origin rather than anywhere else.\n[F]Ways to get artifacts from other countries must bedecent and lawful.\n[G]Concern over security is no excuse for refusing to return artifacts to their countries of origin.",
+      "correct_answer": "G",
+      "distractors": "A,B,C,D,E,F"
+    },
+    {
+      "number": 45,
+      "section_type": "Part B",
+      "stem": "Julia",
+      "options": "[A]It is clear that the countries of origin have never been compensated for the stolen artifacts.\n[B]It is a flawed line of reasoning to argue against returning artifacts to their countries of origin.\n[C]Museum visitors can still learn as much from artifacts'copies after the originals are returned.\n[D]Reproductions,even  if  perfectly  made,cannot  take  the  place  of  the   authentic objects.\n[E]The real value of artifacts can only be recognized in their countries of origin rather than anywhere else.\n[F]Ways to get artifacts from other countries must bedecent and lawful.\n[G]Concern over security is no excuse for refusing to return artifacts to their countries of origin.",
+      "correct_answer": "B",
+      "distractors": "A,C,D,E,F,G"
+    },
+    {
+      "number": 46,
+      "section_type": "Part C",
+      "stem": "They sometimes travel more than sixty miles to find food or water,and are very good at working out where other elephants are—even when they are out of sight.",
+      "options": null,
+      "correct_answer": "它们有时会行走60多英里去寻找食物或水源，而且非常擅长判断其他大象的位置——即使后者位于其视线以外。",
+      "distractors": null
+    },
+    {
+      "number": 47,
+      "section_type": "Part C",
+      "stem": "The researchers are convinced that the elephants always know precisely where they are in relation to all the resources they need,and can therefore take shortcuts,as well as following familiar routes.",
+      "options": null,
+      "correct_answer": "研究人员确信，这些大象总是能够很确切地知道它们与所有所需资源之间的相对位置，因此除了走熟路，它们还能走捷径。",
+      "distractors": null
+    },
+    {
+      "number": 48,
+      "section_type": "Part C",
+      "stem": "One possibility was that they merely used their eyes and tried out the plants they found,but that would probably result in a lot of wasted time and energy,not least because their eyesight is actually not very good.",
+      "options": null,
+      "correct_answer": "其中一种可能的解释是，它们仅靠眼睛来寻觅它们要试吃的植物，但这种情况可能会浪费大量的时间和精力，尤其是因为它们的视力实际上并不怎么好。",
+      "distractors": null
+    },
+    {
+      "number": 49,
+      "section_type": "Part C",
+      "stem": "The volatile chemicals produced by plants can be carried a long way,and they are very characteristic:Each plant or tree has its own particular odor signature.",
+      "options": null,
+      "correct_answer": "植物所产生的挥发性化学物质可以扩散很远的距离，而且这些物质还极具独特性：每种植物或树木都有自己特有的气味特征。",
+      "distractors": null
+    },
+    {
+      "number": 50,
+      "section_type": "Part C",
+      "stem": "The experiment showed that elephants may well use smell to identify patches of trees that are good to eat,and secondly to assess the quality of the trees within each patch.",
+      "options": null,
+      "correct_answer": "实验表明，大象完全可以用嗅觉来辨别适宜食用的树丛，并评估每片树丛内树木的质量。",
+      "distractors": null
+    },
+    {
+      "number": 51,
+      "section_type": "Part A",
+      "stem": "Read the following email from an international student and write a reply.\nWrite your answer in about 100 words on the ANSWER SHEET.\nDo not use your own name in your email;use“Li Ming”instead.(10 points)",
+      "options": null,
+      "correct_answer": "略",
+      "distractors": null
+    },
+    {
+      "number": 52,
+      "section_type": "Part B",
+      "stem": "Write an essay based on the picture and the chart below.In your essay,you should\n1)describe the picture and the chart briefly, 2)interpret the implied meaning,and\n3)give your comments.\nWrite your answer in 160-200 words on the ANSWER SHEET.(20 points)",
+      "options": null,
+      "correct_answer": "略",
+      "distractors": null
+    }
+  ]
+}

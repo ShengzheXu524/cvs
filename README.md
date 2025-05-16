@@ -2,19 +2,216 @@
 
 > **助手指引**: 每次会话开始时，请先阅读此README了解项目当前状态，会话结束后请更新本文档，记录新增功能和变更，避免重复工作。更新时，请在文档末尾的"项目开发历史"章节添加新的条目，使用版本号（如v1.0、v1.1）标识，包括实现的功能和修改的内容。
 
-这是一个用于处理考研英语真题docx文件的Python工具，能够通过调用Claude 3.7 API提取试题内容并生成标准化CSV文件。
+这是一个使用大语言模型API自动提取和分析考研英语真题的工具。它将文本格式的考研英语真题文档转换为结构化的JSON数据，可用于后续分析和数据处理。
+
+## 功能特点
+
+- 自动分析考研英语真题文档，提取完整的题目结构和内容
+- 支持从文本文件提取结构化数据
+- 支持完形填空、阅读理解、新题型、翻译和写作等各类题型
+- 可选择使用不同的大型语言模型进行分析
+- 可配置的环境变量和参数设置
+- 自动分段处理大型文档，解决token限制导致的不完整输出问题
+- 智能文档长度检测，针对超过3000字符的文档自动使用分段处理方式
+- 优化四段处理流程，分别提取不同部分内容，确保提取完整性
+
+## 更新日志
+
+### v2.6 (2025-05-20)
+- 添加数据处理器模块，整合文档处理和CSV生成流程
+- 添加专用CSV生成命令行工具，支持单文件和批量处理
+- 支持从提取的结构化数据直接生成标准格式CSV文件
+- 添加示例脚本，展示如何使用数据处理器生成CSV
+- 优化文件命名规则，自动根据元数据确定CSV文件名
+
+### v2.5 (2025-05-20)
+- 优化分段处理流程，采用四段处理方式
+- 将原来的两段处理（1-25题和26-52题）扩展为四段处理：
+  1. 提取基本信息和sections中的cloze和readings部分
+  2. 提取sections中的剩余部分(new_type, translation, writing)
+  3. 提取题目1-25
+  4. 提取题目26-52
+- 解决了sections部分内容过大导致上下文不足的问题
+- 确保各部分内容的完整提取，提高了提取质量
+
+### v2.4 (2025-05-18)
+- 优化文档处理逻辑，添加智能文档长度检测功能
+- 对超过3000字符的文档自动使用分段处理，提高处理效率
+- 避免不必要的API调用尝试，节约API使用成本
+
+### v2.3 (2025-05-16)
+- 添加分段处理功能，解决token限制导致的不完整输出问题
+- 现在可以完整提取所有52道考研英语题目，不会因为token限制而截断
+
+### v2.2 (2025-05-15)
+- 移除硬编码默认模型，统一使用环境变量中的DEFAULT_MODEL
+- 优化模型配置管理，支持更多模型类型
+
+### v2.1 (2025-05-12)
+- 增加模型选择功能
+- 支持使用不同的LLM模型处理同一文档
+- 增加结果对比分析功能
+
+### v2.0 (2025-05-10)
+- 重构代码架构，采用模块化设计
+- 使用OpenRouter API支持多种模型
+- 增加JSON格式输出支持
+
+### v1.0 (2025-05-01)
+- 初始版本发布
+- 基本文档处理功能
+
+## 快速开始
+
+### 环境准备
+
+1. 克隆本仓库到本地：
+```bash
+git clone https://github.com/yourusername/cvs.git
+cd cvs
+```
+
+2. 创建并激活虚拟环境：
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或者
+venv\Scripts\activate  # Windows
+```
+
+3. 安装依赖：
+```bash
+pip install -r requirements.txt
+```
+
+4. 设置API密钥：
+   - 在项目根目录创建`.env`文件
+   - 添加以下内容：
+```
+OPENROUTER_API_KEY=your_api_key_here
+DEFAULT_MODEL=google/gemini-2.5-flash-preview
+```
+
+### 使用方法
+
+1. 基本使用：
+```bash
+python src/main.py input_file.txt --output-dir test_results
+```
+
+2. 指定模型：
+```bash
+python src/main.py input_file.txt --model anthropic/claude-3-haiku
+```
+
+3. 保存调试信息：
+```bash
+python src/main.py input_file.txt --debug
+```
+
+## CSV生成
+
+本工具支持将提取的结构化数据转换为标准CSV格式，便于后续分析和使用：
+
+### 命令行工具
+
+1. 处理单个文件并生成CSV：
+```bash
+python src/gen_csv.py --input 文件路径.txt --output-dir 输出目录
+```
+
+2. 批量处理目录下的所有文件：
+```bash
+python src/gen_csv.py --input 数据目录 --batch --file-pattern "*.txt" --output-dir 输出目录
+```
+
+3. 指定模型并启用调试模式：
+```bash
+python src/gen_csv.py --input 文件路径.txt --model google/gemini-2.5-flash-preview --debug
+```
+
+### 通过Python API使用
+
+您也可以在自己的Python脚本中使用数据处理器：
+
+```python
+from src.data_processor import DataProcessor
+
+# 初始化数据处理器
+processor = DataProcessor(model_name="google/gemini-2.5-flash-preview")
+
+# 处理文档并生成CSV
+success, csv_path, process_time = processor.process_document(
+    document_path="文件路径.txt",
+    output_dir="输出目录",
+    save_debug=True  # 保存调试信息
+)
+
+# 检查处理结果
+if success:
+    print(f"成功生成CSV: {csv_path}，耗时: {process_time:.2f}秒")
+else:
+    print(f"处理失败，耗时: {process_time:.2f}秒")
+```
+
+有关更多示例，请参考`examples/gen_csv_example.py`。
+
+## 解决Token限制问题
+
+当处理大型文档时，一些模型可能会因为token限制而无法完整输出所有52道考研英语题目。本工具实现了智能分段处理：
+
+1. 首先检测文档长度，超过3000字符自动使用分段处理
+2. 使用四段处理流程，确保信息完整提取：
+   - 第一段：提取基本信息(metadata)和sections中的cloze和readings部分
+   - 第二段：提取sections中的剩余部分(new_type, translation, writing)
+   - 第三段：提取题目1-25的详细信息
+   - 第四段：提取题目26-52的详细信息
+3. 自动合并四部分结果，生成完整数据
+
+这种四段处理方法解决了单一大型请求可能导致的token限制问题，同时也解决了两段处理中sections部分内容过大导致的上下文不足问题，确保提取的内容完整且准确。
+
+## 项目结构
+
+```
+cvs/
+├── .env                 # 环境变量配置文件
+├── README.md            # 说明文档
+├── requirements.txt     # 依赖包列表
+├── setup_openrouter.py  # OpenRouter API设置工具
+├── src/                 # 源代码目录
+│   ├── __init__.py
+│   ├── content_analyzer.py  # 内容分析器
+│   ├── main.py              # 主程序
+│   ├── model_config.py      # 模型配置
+│   ├── openrouter_handler.py  # OpenRouter API处理器
+│   └── ...
+├── examples/            # 示例代码
+└── test_results/        # 测试结果目录
+    ├── analysis/        # 分析结果
+    └── debug/           # 调试信息
+```
+
+## 依赖项
+
+- Python 3.8+
+- dotenv
+- requests
+- tqdm
+
+## 开发计划
+
+- [ ] 增加更多模型支持
+- [ ] 添加批量处理功能
+- [ ] 提供更详细的结果分析
+- [ ] 添加用户界面
+
+## 许可证
+
+MIT
 
 ## 项目仓库
 
 GitHub: https://github.com/ShengzheXu524/cvs
-
-## 功能介绍
-
-本工具可以：
-1. 读取考研英语真题的docx文件
-2. 调用Claude 3.7 API进行内容分析和结构识别
-3. 提取文档中的所有相关信息（题目、原文、答案等）
-4. 按照规定格式组织数据并输出为CSV文件
 
 ## 输出CSV格式
 
@@ -84,7 +281,8 @@ GitHub: https://github.com/ShengzheXu524/cvs
 ├── src/                         # 源代码目录
 │   ├── main.py                  # 主程序入口
 │   ├── docx_reader.py           # 文档读取模块
-│   ├── claude_api.py            # Claude API调用模块
+│   ├── openrouter_api.py        # OpenRouter API调用模块
+│   ├── model_config.py          # 模型配置模块
 │   ├── content_analyzer.py      # 内容分析模块
 │   ├── data_organizer.py        # 数据组织模块
 │   ├── csv_generator.py         # CSV生成模块
@@ -93,8 +291,37 @@ GitHub: https://github.com/ShengzheXu524/cvs
 │   └── utils.py                 # 工具函数
 └── examples/                    # 示例文件
     ├── example_usage.py         # 示例使用脚本
-    └── batch_process.py         # 批处理脚本
+    ├── batch_process.py         # 批处理脚本
+    └── test_mistral.py          # Mistral模型测试脚本
 ```
+
+## OpenRouter API支持
+
+从v1.1版本开始，本工具支持使用OpenRouter API来调用各种大语言模型，包括一些免费的开源模型。
+
+### 当前可用的免费模型
+
+经过测试，目前以下免费模型可用：
+
+- `mistralai/mistral-7b-instruct:free` - Mistral 7B指令模型免费版（每天有限定的免费调用次数）
+
+其他模型可能需要额外的数据隐私设置或付费访问权限。
+
+### 免费模型的使用
+
+使用免费模型时需要注意：
+
+1. 需要在OpenRouter平台开启"Enable training and logging"设置
+2. 使用API时需要添加`allow_training`和`allow_logging`参数
+3. 每天有约50次的免费调用次数限制
+
+### 付费模型
+
+OpenRouter还支持多种付费商业模型（需要充值使用）：
+
+- `openai/gpt-4o` - OpenAI的最新GPT-4o模型
+- `anthropic/claude-3-5-sonnet` - Anthropic的Claude 3.5 Sonnet模型
+- `anthropic/claude-3-haiku` - Anthropic的Claude 3 Haiku模型（速度快）
 
 ## 安装与配置
 
@@ -263,11 +490,20 @@ self.client = Anthropic(api_key=self.api_key)
 
 ## 项目开发历史
 
-### v1.0
-- 创建项目基本结构
-- 实现文档读取模块、API调用模块、内容分析模块、数据组织模块和CSV生成模块
-- 添加句子拆分功能
-- 创建基本的命令行界面
+### v1.1 - OpenRouter支持 (2024-05-15)
+
+- 增加了对OpenRouter API的支持，可以调用多种开源和商业大语言模型
+- 添加了模型配置管理模块，使模型选择更加灵活
+- 基于测试结果，推荐使用mistralai/mistral-7b-instruct:free模型
+- 添加了setup_openrouter.py脚本，简化API密钥配置过程
+- 优化了API请求错误处理和重试机制
+- 解决了数据隐私策略问题，确保API调用正常工作
+
+### v1.0 - 初始版本
+
+- 实现了考研英语真题文档处理的基本功能
+- 支持通过Claude API提取结构化数据
+- 生成标准CSV格式输出
 
 ### v1.1
 - 更新Claude API调用模块，支持新的结构化JSON格式
@@ -343,3 +579,63 @@ self.client = Anthropic(api_key=self.api_key)
 - 优化JSON解析逻辑，确保能正确提取更大响应中的JSON数据
 - 更新文档，增加关于流式API处理的说明和最佳实践
 - 添加"超时问题解决"章节，提供详细的解决方案和示例代码
+
+### 配置OpenRouter
+
+1. 访问[OpenRouter官网](https://openrouter.ai/)注册账户
+2. 在OpenRouter控制台获取API密钥
+3. 运行配置工具设置密钥和默认模型：
+```bash
+python setup_openrouter.py
+```
+4. 测试API连接：
+```bash
+python test_openrouter_api.py
+```
+
+### 使用OpenRouter模型
+
+在使用时可以指定要使用的模型：
+```bash
+python src/main.py --input ./examples/2023英语一.docx --output ./results/2023英语一.csv --model mistralai/mistral-7b-instruct:free
+```
+
+也可以在.env文件中设置默认模型：
+```
+DEFAULT_MODEL=mistralai/mistral-7b-instruct:free
+```
+
+### v2.0 - 移除API硬编码 (2024-05-20)
+
+- 移除了关于API调用的硬编码内容，改为使用全局常量
+- 添加了`OPENROUTER_API_URL`和`OPENROUTER_MODELS_API_URL`全局常量，便于统一管理API端点
+- 修改`OpenRouterAPI`类的初始化，支持通过参数自定义API端点
+- 更新了测试脚本显示实际的API请求URL
+- 改进setup_openrouter.py脚本，显示当前使用的API端点
+- 优化代码结构，使API调用更加灵活和可配置
+- 所有模块现在可以通过导入统一的URL常量来保持一致性
+
+### v2.1 - 添加Google Gemini 2.5 Flash模型支持 (2024-05-15)
+
+- 添加对Google最新模型`google/gemini-2.5-flash-preview`的支持
+- 通过测试对比，gemini-2.5-flash相比mistral-7b在响应速度上有略微优势（4.82秒 vs 5.84秒）
+- 实现了基于最新特性的高级模型测试脚本`advanced_model_test.py`
+- 模型在JSON格式输出和结构化数据处理方面表现良好
+- 解决了部分格式化问题，使gemini模型输出的JSON更加标准
+- 在文档提取任务中，gemini模型能够正确处理标记符号和原文/还原文本的区分
+- 优化了模型选择方式，在`.env`文件和命令行参数中均可指定模型
+- 测试结果表明，gemini-2.5-flash是一个处理结构化数据提取的不错选择
+- 更新文档，添加gemini模型的说明和使用示例
+
+### v2.2 - 优化模型选择逻辑 (2024-05-15)
+
+- 移除了所有硬编码的默认模型配置，统一使用环境变量中的`DEFAULT_MODEL`
+- 优化`get_model()`函数逻辑，完全依赖环境变量获取默认模型
+- 修改`model_config.py`模块，避免在多处出现相同的默认模型硬编码
+- 更新`setup_openrouter.py`脚本，不再默认指定特定模型
+- 改进高级模型测试脚本，支持单模型测试和模型对比测试
+- 添加新的命令行参数选项：支持`--model`指定单个模型和`--compare`进行模型对比
+- 解决同时调用多个模型处理同一文件的问题
+- 简化模型选择逻辑，确保一次只使用一个模型处理文件
+- 修复Gemini模型相关配置，增加对`gemini-2.5`系列的特殊处理
+- 测试验证了使用环境变量中的默认模型可以正常工作

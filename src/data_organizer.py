@@ -361,49 +361,56 @@ class DataOrganizer:
     
     def _standardize_fields(self, question):
         """
-        标准化题目数据的字段名称。
+        标准化字段名称，确保字段名称统一。
         
         Args:
             question (dict): 原始题目数据
-        
+            
         Returns:
             dict: 标准化后的题目数据
         """
-        # 字段名映射
+        # 字段名称映射
         field_mapping = {
-            "year": "年份",
-            "exam_type": "考试类型",
-            "question_type": "题型",
-            "section_type": "题型",
-            "original_text": "原文（卷面）",
-            "answers": "试卷答案",
-            "answers_summary": "试卷答案",
-            "question_number": "题目编号",
+            # 通用字段
             "number": "题目编号",
-            "question_text": "题干",
+            "section_type": "题型",
             "stem": "题干",
             "options": "选项",
             "correct_answer": "正确答案",
-            "restored_text": "原文（还原后）",
-            "incorrect_options": "干扰选项",
+            "distractors": "干扰选项",
+            
+            # 可能出现的其他字段
+            "question_type": "题型",
+            "question_number": "题目编号",
+            "question_stem": "题干",
+            "question_options": "选项",
+            "answer": "正确答案",
             "distractor_options": "干扰选项",
-            "sentence_split_text": "原文（句子拆解后）"
+            
+            # 中文字段保持不变
+            "题目编号": "题目编号",
+            "题型": "题型",
+            "题干": "题干",
+            "选项": "选项",
+            "正确答案": "正确答案",
+            "干扰选项": "干扰选项",
+            "年份": "年份",
+            "考试类型": "考试类型",
+            "原文（卷面）": "原文（卷面）",
+            "原文（还原后）": "原文（还原后）",
+            "原文（句子拆解后）": "原文（句子拆解后）",
+            "试卷答案": "试卷答案"
         }
         
-        # 创建新字典，使用标准化字段名
+        # 创建新的标准化字段字典
         standardized = {}
         
-        # 先复制所有原始字段
         for key, value in question.items():
-            # 检查是否需要标准化字段名
-            if key in field_mapping.values():
-                # 已经是标准字段名
-                standardized[key] = value
-            elif key in field_mapping:
-                # 需要标准化
+            # 如果字段在映射中，使用映射后的名称
+            if key in field_mapping:
                 standardized[field_mapping[key]] = value
             else:
-                # 未知字段，保持原样
+                # 对未知字段，保留原始名称
                 standardized[key] = value
         
         return standardized
@@ -413,35 +420,35 @@ class DataOrganizer:
         添加缺失字段的默认值。
         
         Args:
-            question (dict): 输入的题目数据
-        
+            question (dict): 标准化后的题目数据
+            
         Returns:
             dict: 补充完整的题目数据
         """
-        # 必要字段及其默认值
-        required_fields = {
-            "年份": "",
-            "考试类型": "",
-            "题型": "",
-            "原文（卷面）": "",
-            "试卷答案": "",
+        # 必需字段的默认值
+        default_values = {
             "题目编号": "",
+            "题型": "",
             "题干": "",
             "选项": "",
             "正确答案": "",
+            "干扰选项": "",
+            "年份": "",
+            "考试类型": "",
+            "原文（卷面）": "",
             "原文（还原后）": "",
             "原文（句子拆解后）": "",
-            "干扰选项": ""
+            "试卷答案": ""
         }
         
-        # 创建新字典，包含所有必要字段
+        # 创建新的完整字段字典
         complete = question.copy()
         
-        # 添加缺失的字段
-        for field, default_value in required_fields.items():
+        # 添加默认值
+        for field, default_value in default_values.items():
             if field not in complete:
                 complete[field] = default_value
-        
+                
         return complete
     
     def _get_question_type(self, question_number):

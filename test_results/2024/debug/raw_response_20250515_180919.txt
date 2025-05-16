@@ -1,0 +1,204 @@
+{
+  "questions": [
+    {
+      "number": 1,
+      "section_type": "完形填空",
+      "stem": "There's nothing more welcoming than a door opening for you. 1         the need to be touched to open or close,automatic doors are essential in 2         disabled  access  to buildings and helping provide general  3        to  commercial  buildings.",
+      "options": "A. Through, B. Despite, C. Besides, D. Without",
+      "correct_answer": "D. Without",
+      "distractors": "A. Through, B. Despite, C. Besides"
+    },
+    {
+      "number": 2,
+      "section_type": "完形填空",
+      "stem": "There's nothing more welcoming than a door opening for you. 1         the need to be touched to open or close,automatic doors are essential in 2         disabled  access  to buildings and helping provide general  3        to  commercial  buildings.",
+      "options": "A. revealing, B. demanding, C. improving, D. tracing",
+      "correct_answer": "C. improving",
+      "distractors": "A. revealing, B. demanding, D. tracing"
+    },
+    {
+      "number": 3,
+      "section_type": "完形填空",
+      "stem": "There's nothing more welcoming than a door opening for you. 1         the need to be touched to open or close,automatic doors are essential in 2         disabled  access  to buildings and helping provide general  3        to  commercial  buildings.",
+      "options": "A. experience, B. convenience, C. guidance, D. reference",
+      "correct_answer": "B. convenience",
+      "distractors": "A. experience, C. guidance, D. reference"
+    },
+    {
+      "number": 4,
+      "section_type": "完形填空",
+      "stem": "Self-sliding doors began to emerge as a commercial product in  1960 after being invented six years      4     by Americans Dee Horton  and Lew Hewitt.",
+      "options": "A. previously, B. temporarily, C. successively, D. eventually",
+      "correct_answer": "A. previously",
+      "distractors": "B. temporarily, C. successively, D. eventually"
+    },
+    {
+      "number": 5,
+      "section_type": "完形填空",
+      "stem": "They 5         as a novelty  feature,but  as  their  use  has   grown,their       6       have  extended  within  our technologically advanced world.",
+      "options": "A. held     on, B. started    out, C. settled    down, D. went  by",
+      "correct_answer": "B. started    out",
+      "distractors": "A. held     on, C. settled    down, D. went  by"
+    },
+    {
+      "number": 6,
+      "section_type": "完形填空",
+      "stem": "They 5         as a novelty  feature,but  as  their  use  has   grown,their       6       have  extended  within  our technologically advanced world.",
+      "options": "A. relations, B. volumes, C. benefits, D. sources",
+      "correct_answer": "C. benefits",
+      "distractors": "A. relations, B. volumes, D. sources"
+    },
+    {
+      "number": 7,
+      "section_type": "完形填空",
+      "stem": "Particularly 7        in busy locations or during times of emergency,the    doors       8      crowd  management  by reducing the  obstacles  put  in peoples'way.",
+      "options": "A. useful, B. simple, C. flexible, D. stable",
+      "correct_answer": "A. useful",
+      "distractors": "B. simple, C. flexible, D. stable"
+    },
+    {
+      "number": 8,
+      "section_type": "完形填空",
+      "stem": "Particularly 7        in busy locations or during times of emergency,the    doors       8      crowd  management  by reducing the  obstacles  put  in peoples'way.",
+      "options": "A. call      for, B. yield    to, C. insist    on, D. act    as",
+      "correct_answer": "D. act    as",
+      "distractors": "A. call      for, B. yield    to, C. insist    on"
+    },
+    {
+      "number": 9,
+      "section_type": "完形填空",
+      "stem": "9         making access both in and out of buildings easier for people,the difference in the way many  of these  doors  open  helps  reduce the total  area  10           by  them.",
+      "options": "A. As   well   as, B. In  terms  of, C. Thanks    to, D. Rather    than",
+      "correct_answer": "A. As   well   as",
+      "distractors": "B. In  terms  of, C. Thanks    to, D. Rather    than"
+    },
+    {
+      "number": 10,
+      "section_type": "完形填空",
+      "stem": "9         making access both in and out of buildings easier for people,the difference in the way many  of these  doors  open  helps  reduce the total  area  10           by  them.",
+      "options": "A. connected, B. shared, C. represented, D. occupied",
+      "correct_answer": "D. occupied",
+      "distractors": "A. connected, B. shared, C. represented"
+    },
+    {
+      "number": 11,
+      "section_type": "完形填空",
+      "stem": "Automatic  doors  often  open  to  the  side,with  the  panels  sliding  across  one  another. Replacing  swing  doors,these     11     smaller buildings to maximise the usable  space inside without having to  12         the way for a large,sticking-out door.",
+      "options": "A. allow, B. expect, C. require, D. direct",
+      "correct_answer": "A. allow",
+      "distractors": "B. expect, C. require, D. direct"
+    },
+    {
+      "number": 12,
+      "section_type": "完形填空",
+      "stem": "Automatic  doors  often  open  to  the  side,with  the  panels  sliding  across  one  another. Replacing  swing  doors,these     11     smaller buildings to maximise the usable  space inside without having to  12         the way for a large,sticking-out door.",
+      "options": "A. adopt, B. lead, C. clear, D. change",
+      "correct_answer": "C. clear",
+      "distractors": "A. adopt, B. lead, D. change"
+    },
+    {
+      "number": 13,
+      "section_type": "完形填空",
+      "stem": "There are many different types of automatic door,with each     13     specific signals to tell them when to open. 14         these  methods  differ,the  main  15         remain the  same.",
+      "options": "A. adapting      to, B. deriving    from, C. relying    on, D. pointing    at",
+      "correct_answer": "C. relying    on",
+      "distractors": "A. adapting      to, B. deriving    from, D. pointing    at"
+    },
+    {
+      "number": 14,
+      "section_type": "完形填空",
+      "stem": "There are many different types of automatic door,with each     13     specific signals to tell them when to open. 14         these  methods  differ,the  main  15         remain the  same.",
+      "options": "A. Once, B. Since, C. Unless, D. Although",
+      "correct_answer": "D. Although",
+      "distractors": "A. Once, B. Since, C. Unless"
+    },
+    {
+      "number": 15,
+      "section_type": "完形填空",
+      "stem": "There are many different types of automatic door,with each     13     specific signals to tell them when to open. 14         these  methods  differ,the  main  15         remain the  same.",
+      "options": "A. records, B. positions, C. principles, D. reasons",
+      "correct_answer": "C. principles",
+      "distractors": "A. records, B. positions, D. reasons"
+    },
+    {
+      "number": 16,
+      "section_type": "完形填空",
+      "stem": "Each automatic door system 16         the  light,sound,weight  or  movement  in  their vicinity  as  a   signal  to  open.",
+      "options": "A. controls, B. analyses, C. produces, D. mixes",
+      "correct_answer": "B. analyses",
+      "distractors": "A. controls, C. produces, D. mixes"
+    },
+    {
+      "number": 17,
+      "section_type": "完形填空",
+      "stem": "Sensor  types  are  chosen  to        17        the  different environments they  are  needed  in.",
+      "options": "A. decorate, B. compare, C. protect, D. complement",
+      "correct_answer": "D. complement",
+      "distractors": "A. decorate, B. compare, C. protect"
+    },
+    {
+      "number": 18,
+      "section_type": "完形填空",
+      "stem": "18         ,a  busy  street  might  not  19           a  motion- sensored  door,as  it  would  constantly  be  opening  for  passers-by.",
+      "options": "A. In     conclusion, B. By    contrast, C. For   example, D. Above    all",
+      "correct_answer": "C. For   example",
+      "distractors": "A. In     conclusion, B. By    contrast, D. Above    all"
+    },
+    {
+      "number": 19,
+      "section_type": "完形填空",
+      "stem": "18         ,a  busy  street  might  not  19           a  motion- sensored  door,as  it  would  constantly  be  opening  for  passers-by.",
+      "options": "A. identify, B. suit, C. secure, D. include",
+      "correct_answer": "B. suit",
+      "distractors": "A. identify, C. secure, D. include"
+    },
+    {
+      "number": 20,
+      "section_type": "完形填空",
+      "stem": "A pressure-sensitive mat would be more 20         to limit the surveyed area.",
+      "options": "A. appropriate, B. obvious, C. impressive, D. delicate",
+      "correct_answer": "A. appropriate",
+      "distractors": "B. obvious, C. impressive, D. delicate"
+    },
+    {
+      "number": 21,
+      "section_type": "阅读理解",
+      "stem": "The Romans buried the nails probably for the sake of",
+      "options": "[A]saving  them  for  future  use.\n[B]keeping  them   from  rusting.\n[C]letting  them  grow  in  value.\n[D]hiding  them  from  the  locals.",
+      "correct_answer": "D. hiding  them  from  the  locals.",
+      "distractors": "A. saving  them  for  future  use., B. keeping  them   from  rusting., C. letting  them  grow  in  value."
+    },
+    {
+      "number": 22,
+      "section_type": "阅读理解",
+      "stem": "The example of early  17th-century Virginians is used to",
+      "options": "[A]highlight  the  thriftiness  of early  American  colonists.\n[B]illustrate the high  status  of blacksmiths  in  that  period.\n[C]contrast the  attitudes  of different  civilisations  towards  nails.\n[D]show the preciousness  of nail-making technology  at  that time.",
+      "correct_answer": "D. show the preciousness  of nail-making technology  at  that time.",
+      "distractors": "A. highlight  the  thriftiness  of early  American  colonists., B. illustrate the high  status  of blacksmiths  in  that  period., C. contrast the  attitudes  of different  civilisations  towards  nails."
+    },
+    {
+      "number": 23,
+      "section_type": "阅读理解",
+      "stem": "What played the major role in lowering the price of nails after the late  1700s?",
+      "options": "[A]Increased     productivity.\n[B]Wider  use  of  new  energies.\n[C]Fiercer   market   competition.\n[D]Reduced  cost  of  raw  materials.",
+      "correct_answer": "A. Increased     productivity.",
+      "distractors": "B. Wider  use  of  new  energies., C. Fiercer   market   competition., D. Reduced  cost  of  raw  materials."
+    },
+    {
+      "number": 24,
+      "section_type": "阅读理解",
+      "stem": "It can be learned from Paragraph 5 that nails",
+      "options": "[A]have  undergone  many  technological  improvements.\n[B]have remained basically the  same  since  Roman times.\n[C]are  less  studied  than  other  everyday  products.\n[D]are  one  of the world's most  significant  inventions.",
+      "correct_answer": "B. have remained basically the  same  since  Roman times.",
+      "distractors": "A. have  undergone  many  technological  improvements., C. are  less  studied  than  other  everyday  products., D. are  one  of the world's most  significant  inventions."
+    },
+    {
+      "number": 25,
+      "section_type": "阅读理解",
+      "stem": "Which of the following best summarises the last two paragraphs?",
+      "options": "[A]Cheap  technologies  bring  aboutrevolutionary  change.\n[B]Technological  innovation  is  integral to  economic  success.\n[C]Technology  defines  people's understanding  of the  world.\n[D]Sophisticated  technologies  develop  from  small  inventions.",
+      "correct_answer": "A. Cheap  technologies  bring  aboutrevolutionary  change.",
+      "distractors": "B. Technological  innovation  is  integral to  economic  success., C. Technology  defines  people's understanding  of the  world., D. Sophisticated  technologies  develop  from  small  inventions."
+    }
+  ]
+}
